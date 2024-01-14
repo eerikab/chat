@@ -28,7 +28,7 @@ class client():
         self.send = ttk.Button(win, text="Send message", command=self.post)
         self.send.pack()
 
-        win.after(1000,self.start)
+        win.after(100,self.start)
 
     def start(self):
         self.c = socket.socket()
@@ -47,7 +47,6 @@ class client():
         self.c.connect(("localhost",9999))
 
         print(_text)
-        self.c.send(bytes("post","utf-8"))
         self.c.send(bytes(_text,"utf-8"))
         self.receive()
 
@@ -56,7 +55,7 @@ class client():
         
         text = ""
         for i in range(num):
-            msg = "\n\n" + self.c.recv(1024).decode().strip()
+            msg = "\n" + self.c.recv(1024).decode().strip()
             text += msg
         text = text.strip()
         self.label['text'] = text
