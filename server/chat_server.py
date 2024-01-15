@@ -2,12 +2,12 @@ import socket
 import os
 import time
 
-print("Server started. Press Ctrl+Z to close")
+print("Server launched. Press Ctrl+Z to close")
 directory = os.path.dirname(__file__)+"/chatserverlog.txt"
 s = socket.socket()
 
 s.bind(("localhost",9999))
-print("socket created")
+print("Socket created")
 
 s.listen(1)
 print("Waiting for connection")
