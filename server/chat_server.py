@@ -1,6 +1,6 @@
 import socket
 import os
-import time
+#import time
 
 print("Server initialized. Press Ctrl+Z to close")
 directory = os.path.dirname(__file__)+"/chatserverlog.txt"
@@ -14,22 +14,26 @@ print("Waiting for connection")
 
 while True:
     c, addr = s.accept()
-    msg = c.recv(1024).decode()
-    print("Connected with ", addr, msg)
+    get = c.recv(1024).decode().split("\n")
+    cmd = get[0]
+    print("Connected with ", addr, cmd)
  
     #c.send(bytes(msg,"utf-8"))
 
-    with open(directory,"a") as file:
-        if msg == "post":
-            file.write("\n"+msg)
+    if cmd == "post":
+        with open(directory,"a") as file:
+            for num in range(len(get)-1):
+                msg = get[num+1]
+                file.write("\n"+msg)
 
-    if msg != "login":
+    if cmd != "login":
         with open(directory,"r") as file:
             msgs = file.readlines()
-            text = str(len(msgs))
-            c.send(bytes(text,"utf-8"))
+            text = ""
             for line in msgs:
-                c.send(bytes(line,"utf-8"))
-                
+                text += line+"\n"
+            text.strip()
+            c.send(bytes(text,"utf-8"))
+            
 
     c.close()
