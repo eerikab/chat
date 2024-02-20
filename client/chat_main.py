@@ -1,10 +1,15 @@
 import os
 import chat_login
+import chat_client
+import tkinter as tk
 
-directory = os.path.dirname(__file__)+"/chatserverlog.txt"
+directory = os.path.dirname(__file__)
 
-user = chat_login.main()
+def main():
+    user = chat_login.main()
 
-if user != "":
-    import chat_client
-    chat_client.main(user)
+    if user != "":
+        if chat_client.main(user):
+            main()
+
+main()
