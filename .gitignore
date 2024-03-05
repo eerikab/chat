@@ -1,4 +1,5 @@
 #ignore text files
 *.txt
+#cache
 __pycache__
-server.sh
+cache

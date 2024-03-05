@@ -5,11 +5,18 @@ import tkinter as tk
 
 directory = os.path.dirname(__file__)
 
-def main():
-    user = chat_login.main()
+class main():
+    
+    def __init__(self) -> None:
+        self.win = tk.Tk()
+        self.win.withdraw() #Disable the main window
+        self.login()
 
-    if user != "":
-        if chat_client.main(user):
-            main()
+    def login(self):
+        chat_login.main(self)
 
-main()
+    def client(self,user):
+       chat_client.main(user,self)
+
+m = main()
+m.win.mainloop()

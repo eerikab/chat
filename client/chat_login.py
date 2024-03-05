@@ -5,8 +5,6 @@ import chat_settings
 
 save = os.path.dirname(__file__)+"/chat_settings.txt"
 
-win = tk.Tk()
-
 delay = 1000
 run = 1
 
@@ -15,10 +13,11 @@ run = 1
 1 - Password
 2 - Theme
 3 - Accent
+4 - Apply theming
 '''
 
 class client():
-    def __init__(self):
+    def __init__(self,master):
         try:
             with open(save,"r") as file:
                 lines = file.readlines()
@@ -27,13 +26,22 @@ class client():
                 self.password = lines[1].strip()
                 self.theme = lines[2].strip()
                 self.accent = lines[3].strip()
+                self.apply_theme = int(lines[4].strip())
         except:
             self.user = ""
             self.password = ""
             self.theme = ""
             self.accent = ""
+            self.apply_theme = 1
         
+        self.master = master
         self.success = 0
+
+        self.win = tk.Toplevel(master.win)
+        self.win.title("Chat login")
+
+        self.font = os.path.dirname(__file__)+"/fonts/Cantarell.ttf"
+        self.font_bold = os.path.dirname(__file__)+"/fonts/Cantarell-Bold.ttf"
 
         #Lists for managing widget themes
         self.ls_frame = []
@@ -43,7 +51,7 @@ class client():
         self.ls_check = []
 
         #Widgets
-        self.frame = tk.Frame(win)
+        self.frame = tk.Frame(self.win)
         self.frame.pack()
         self.ls_frame.append(self.frame)
         self.welcome = tk.Label(self.frame,text="Welcome!")
@@ -66,7 +74,7 @@ class client():
         #self.password.pack()
 
         self.remvar = tk.IntVar()
-        self.remember = tk.Checkbutton(self.frame,text="Remember me",variable=self.remvar,highlightthickness=0)
+        self.remember = tk.Checkbutton(self.frame,text="Remember me",variable=self.remvar,highlightthickness=0,command=self.theming)
         self.remember.pack()
         self.ls_check.append(self.remember)
 
@@ -79,6 +87,8 @@ class client():
         self.error = tk.Label(self.frame,fg="red")
         self.error.pack()
         self.ls_label.append(self.error)
+
+        self.win.protocol('WM_DELETE_WINDOW', self.close)
 
         self.setting = chat_settings.settings()
         self.theming()
@@ -112,76 +122,77 @@ class client():
                     file.write("\n")
                 file.write("\n"+self.theme)
                 file.write("\n"+self.accent)
+                file.write("\n"+str(self.apply_theme))
             if resp == "OK":
                 self.success = 1
-                win.destroy()
+                self.master.client(self.user)
+                self.win.destroy()
             else:
                 self.error["text"] = resp
             self.c.close()
 
     def theming(self):
         #Function used to theme local settings window
+        for i in [self.ls_button,self.ls_label,self.ls_check,self.ls_entry]:
+            for j in i:
+                j["font"] = self.font + " 10"
+        
+        if self.apply_theme:
+            #Get theme colours
+            theme, accent = self.setting.theming(self.theme,self.accent)
+            self.theme = theme["name"]
+            self.accent = accent["name"]
+            #print("Theming",self.theme_var.get(),self.accent_var.get())
+            col_bg = theme["bg"]
+            col_textbox = theme["textbox"]
+            col_msg = theme["msg"]
+            col_side = theme["side"]
+            col_text = theme["text"]
+            col_high = theme["high"]
+            col_high_text = theme["high_text"]
 
-        #Get theme colours
-        theme, accent = self.setting.theming(self.theme,self.accent)
-        self.theme = theme["name"]
-        self.accent = accent["name"]
-        #print("Theming",self.theme_var.get(),self.accent_var.get())
-        col_bg = theme["bg"]
-        col_textbox = theme["textbox"]
-        col_msg = theme["msg"]
-        col_side = theme["side"]
-        col_text = theme["text"]
-        col_high = theme["high"]
-        col_high_text = theme["high_text"]
+            col_button = accent["button"]
+            col_user = accent["user"]
+            col_button_high = accent["button_high"]
+            col_select = accent["selected"]
 
-        col_button = accent["button"]
-        col_user = accent["user"]
-        col_button_high = accent["button_high"]
-        col_select = accent["selected"]
+            #Update widget colours
+            for i in self.ls_frame:
+                i["bg"] = col_bg
+                i["borderwidth"] = 1
+            for i in self.ls_label:
+                i["bg"] = col_bg
+                i["fg"] = col_text
+            for i in self.ls_button:
+                i["bg"] = col_button
+                i["fg"] = col_text
+                i["activebackground"] = col_button_high
+                i["activeforeground"] = col_text
+            for i in self.ls_check:
+                i["bg"] = col_bg
+                i["fg"] = col_text
+                if self.remvar.get():
+                    i["selectcolor"] = col_button
+                else:
+                    i["selectcolor"] = col_msg
+                i["activebackground"] = col_high
+                i["activeforeground"] = col_text
+            for i in self.ls_entry:
+                i["bg"] = col_msg
+                i["fg"] = col_text
+                i["insertbackground"] = col_text
+                i["selectforeground"] = col_text
+                i["selectbackground"] = col_high
 
-        #Update widget colours
-        for i in self.ls_frame:
-            i["bg"] = col_bg
-            i["borderwidth"] = 1
-        for i in self.ls_label:
-            i["bg"] = col_bg
-            i["fg"] = col_text
-        for i in self.ls_button:
-            i["bg"] = col_button
-            i["fg"] = col_text
-            i["activebackground"] = col_button_high
-            i["activeforeground"] = col_text
-        for i in self.ls_check:
-            i["bg"] = col_bg
-            i["fg"] = col_text
-            i["selectcolor"] = col_button
-            i["activebackground"] = col_high
-            i["activeforeground"] = col_text
-        '''self.msg_field = tk.Text(self.frame,
-                                 height=3,
-                                 bg=self.col_msg,
-                                 fg=self.col_text,
-                                 highlightthickness=0,
-                                 insertbackground=self.col_text)'''
-        for i in self.ls_entry:
-            i["bg"] = col_msg
-            i["fg"] = col_text
-            i["insertbackground"] = col_text
-            i["selectforeground"] = col_text
-            i["selectbackground"] = col_high
+            self.error["fg"] = "red"
 
-        self.error["fg"] = "red"
+    def close(self):
+        self.win.destroy()
+        self.master.win.destroy()
 
 
-def main():
+def main(master):
     global success
-    cl = client()
-
-    win.mainloop()
-    if cl.success:
-        return cl.user
-    else:
-        return ""
+    cl = client(master)
     
 if __name__ == "__main__": print("Please run the program through chat_main.py")

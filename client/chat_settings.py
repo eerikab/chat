@@ -6,6 +6,8 @@ class settings():
     def __init__(self,master="") -> None:
         self.file_theme = os.path.dirname(__file__)+"/chat_themes.ini"
         self.file_settings = os.path.dirname(__file__)+"/chat_settings.txt"
+        self.font = os.path.dirname(__file__)+"/fonts/Cantarell.ttf"
+        self.font_bold = os.path.dirname(__file__)+"/fonts/Cantarell-Bold.ttf"
         self.master = master #Main class for responding
 
         #Create settings file if not available
@@ -67,6 +69,8 @@ class settings():
         for i in self.accentlist:
                 self.accent_names.append(i["name"])
 
+        self.themed = 0
+
     def reset(self):
         #Reset all themes
         with open(self.file_theme,"w") as settings:
@@ -93,12 +97,12 @@ class settings():
             }
             config["Theme 2"] = {
                 "Name" : "Light",
-                "Background" : "#f0f0f0",
+                "Background" : "#ececec",
                 "Textbox" : "#fafafa",
-                "Messagebox" : "#e6e6e6",
-                "Sidebar" : "#e6e6e6",
+                "Messagebox" : "#dcdcdc",
+                "Sidebar" : "#dcdcdc",
                 "Text" : "#202020",
-                "Highlight" : "#d4d4d4",
+                "Highlight" : "#c8c8c8",
                 "Highlight text" : "#202020"
             }
             config["Accent 1"] = {
@@ -138,7 +142,7 @@ class settings():
             }
             config.write(settings)
 
-    def theming(self,theme_sect="Dark",accent_sect="Blue"):
+    def theming(self,theme_sect="",accent_sect=""):
         config = configparser.ConfigParser()
         config.read(self.file_theme)
         sect = theme_sect
@@ -155,49 +159,69 @@ class settings():
 
     def local_theming(self,list_frame=[],list_label=[],list_button=[],list_radio=[]):
         #Function used to theme local settings window
+        for i in [self.ls_button,self.ls_label,self.ls_text,self.ls_check,self.ls_radio]:
+            for j in i:
+                j["font"] = self.font + " 10"
+        
+        if self.check_var.get() or self.themed:
+            #Get theme colours
+            theme, accent = self.theming(self.theme_var.get(),self.accent_var.get())
+            #print("Theming",self.theme_var.get(),self.accent_var.get())
+            col_bg = theme["bg"]
+            col_textbox = theme["textbox"]
+            col_msg = theme["msg"]
+            col_side = theme["side"]
+            col_text = theme["text"]
+            col_high = theme["high"]
+            col_high_text = theme["high_text"]
 
-        #Get theme colours
-        theme, accent = self.theming(self.theme_var.get(),self.accent_var.get())
-        #print("Theming",self.theme_var.get(),self.accent_var.get())
-        col_bg = theme["bg"]
-        col_textbox = theme["textbox"]
-        col_msg = theme["msg"]
-        col_side = theme["side"]
-        col_text = theme["text"]
-        col_high = theme["high"]
-        col_high_text = theme["high_text"]
+            col_button = accent["button"]
+            col_user = accent["user"] 
+            col_button_high = accent["button_high"]
+            col_select = accent["selected"]
 
-        col_button = accent["button"]
-        col_user = accent["user"]
-        col_button_high = accent["button_high"]
-        col_select = accent["selected"]
+            #Update widget colours
+            for i in self.ls_frame:
+                i.config(bg = col_bg)
+            for i in self.ls_label:
+                i.config(bg = col_bg,
+                         fg = col_text)
+            for i in self.ls_button:
+                i.config(bg = col_button,
+                         fg = col_text,
+                         activebackground = col_button_high,
+                         activeforeground = col_text)
+            for i in self.ls_radio:
+                i.config(bg = col_msg,
+                         fg = col_text,
+                         activebackground = col_high,
+                         activeforeground = col_text,
+                         selectcolor = col_select)
+            for i in self.ls_text:
+                i.config(bg = col_textbox,
+                         fg = col_text,
+                         selectbackground = col_high,
+                         selectforeground = col_text,
+                         insertbackground = col_text)
+            for i in self.ls_check:
+                i.config(bg = col_bg,
+                         fg = col_text,
+                         activebackground = col_high,
+                         activeforeground = col_text)
+                if self.check_var.get():
+                    i["selectcolor"] = col_button
+                else:
+                    i["selectcolor"] = col_msg
 
-        #Update widget colours
-        for i in self.ls_frame:
-            i["bg"] = col_bg
-            i["borderwidth"] = 1
-        for i in self.ls_label:
-            i["bg"] = col_bg
-            i["fg"] = col_text
-        for i in self.ls_button:
-            i["bg"] = col_button
-            i["fg"] = col_text
-            i["activebackground"] = col_button_high
-            i["activeforeground"] = col_text
-        for i in self.ls_radio:
-            i["bg"] = col_bg
-            i["fg"] = col_text
-            i["selectcolor"] = col_select
-            i["activebackground"] = col_high
-            i["activeforeground"] = col_text
-        for i in self.ls_text:
-            i["bg"] = col_msg
-            i["fg"] = col_text
-            i["insertbackground"] = col_text
-            i["selectforeground"] = col_text
-            i["selectbackground"] = col_high
+            self.field.tag_configure("User",foreground=col_user,font=self.font+" 10 bold")
+            self.error["fg"] = "red"
 
-        self.field.tag_configure("User",foreground=col_user)
+            self.error["text"] = ""
+            self.themed = 1
+            
+        
+        if self.check_var.get() == 0 and self.themed:
+            self.error["text"] = "Please restart to disable theming"
 
     def guiset(self,window=""):
         #Theming
@@ -209,11 +233,13 @@ class settings():
                 self.password = lines[1].strip()
                 self.theme = lines[2].strip()
                 self.accent = lines[3].strip()
+                self.theme_apply = int(lines[4].strip())
         except:
             self.user = ""
             self.password = ""
             self.theme = ""
             self.accent = ""
+            self.theme_apply = 1
 
         #Create window
         if window == "":
@@ -226,6 +252,8 @@ class settings():
         self.theme_var.set(self.themelist[0]["name"])
         self.accent_var = tk.StringVar(self.win)
         self.accent_var.set(self.accentlist[0]["name"])
+        self.check_var = tk.IntVar(self.win)
+        self.check_var.set(self.theme_apply)
 
         #Lists for managing widget themes
         self.ls_frame = []
@@ -233,6 +261,7 @@ class settings():
         self.ls_radio = []
         self.ls_button = []
         self.ls_text = []
+        self.ls_check = []
 
         #print(self.theme)
         frame = tk.Frame(self.win)
@@ -281,14 +310,21 @@ class settings():
             if name == self.accent:
                 self.accent_var.set(name)
 
-        self.field = tk.Text(self.win,width=50,height=3,highlightthickness=0)
+        theme_check = tk.Checkbutton(frame,variable=self.check_var,text="Apply theming",highlightthickness=0,command=self.local_theming)
+        theme_check.pack(pady=8)
+        self.ls_check.append(theme_check)
+
+        self.field = tk.Text(frame,width=50,height=3,highlightthickness=0,borderwidth=0)
         self.field.insert(tk.END,"User: ","User")
         self.field.insert(tk.END,"Sample message")
-        self.field.pack()
+        self.field.pack(padx=16)
         self.ls_text.append(self.field)
         
+        self.error = tk.Label(frame,fg="red")
+        self.error.pack()
+        self.ls_label.append(self.error)
 
-        frame_bottom = tk.Frame(self.win)
+        frame_bottom = tk.Frame(frame)
         frame_bottom.pack(fill="both",expand=1)
         self.ls_frame.append(frame_bottom)
         frame_bottom_left = tk.Frame(frame_bottom)
@@ -312,6 +348,7 @@ class settings():
         button_cancel.pack(pady=8)
         self.ls_button.append(button_cancel)
         self.inloop = 1
+        self.themed = 0
 
         self.local_theming()
 
@@ -340,6 +377,7 @@ class settings():
                 file.write("\n"+password)
                 file.write("\n"+self.theme_var.get())
                 file.write("\n"+self.accent_var.get())
+                file.write("\n"+str(self.check_var.get()))
             if self.master != "":
                 self.master.theming()
 
