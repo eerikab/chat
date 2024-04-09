@@ -1,9 +1,6 @@
-import os
 import chat_login
 import chat_client
 import tkinter as tk
-
-directory = os.path.dirname(__file__)
 
 class main():
     
@@ -15,8 +12,8 @@ class main():
     def login(self):
         chat_login.main(self)
 
-    def client(self,user):
-       chat_client.main(user,self)
+    def client(self,user,password,userid):
+        chat_client.main(user,self,password,userid)
 
 m = main()
 m.win.mainloop()

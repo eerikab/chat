@@ -3,6 +3,7 @@ import tkinter as tk
 #from tkinter import ttk
 import chat_settings
 import os
+import configparser
 
 delay = 1000
 run = 1
@@ -13,7 +14,7 @@ cachedir = directory+"/cache/"
 
 class client():
 
-    def __init__(self,user,master) -> None:
+    def __init__(self,user,master,password,userid) -> None:
 
         #Initialise window
         self.win = tk.Toplevel(master.win)
@@ -23,6 +24,10 @@ class client():
         self.font_bold = directory+"/fonts/Cantarell-Bold.ttf"
 
         self.master = master
+
+        self.name = user
+        self.userid = str(userid)
+        self.password = password
 
         #Create lists for easier configuration of widgets
         self.ls_frame = []
@@ -65,8 +70,6 @@ class client():
         self.frame.pack(fill="x",side="bottom")
         self.ls_frame.append(self.frame)
 
-        self.name = user
-
         self.error = tk.Label(self.frame)
         self.error.pack()
         self.ls_label.append(self.error)
@@ -94,14 +97,16 @@ class client():
         self.settings = tk.Button(self.left, 
                                   text="Settings",
                                   highlightthickness=0,
-                                  command=self.guiset)
+                                  command=self.guiset,
+                                  width=8)
         self.settings.pack(side="bottom",padx=16,pady=16)
         self.ls_button.append(self.settings)
 
         self.close = tk.Button(self.left, 
                                   text="Log out",
                                   highlightthickness=0,
-                                  command=self.logout)
+                                  command=self.logout,
+                                  width=8)
         self.close.pack(side="bottom",padx=16)
         self.ls_button.append(self.close)
 
@@ -109,9 +114,10 @@ class client():
         self.name_label.pack(side="bottom",pady=8)
         self.ls_label.append(self.name_label)
 
-        self.msgs = {}
+        self.msgs = dict()
         self.msg_min = -1
         self.msg_max = -1
+        self.users = dict()
 
         self.settings = chat_settings.settings(self)
         self.theming()
@@ -122,45 +128,47 @@ class client():
 
         self.check_min = 0
         self.check_max = 0
-        self.win.after(100,self.receive)
+        self.win.after(100,self.timed)
 
         #Load cache
         os.makedirs(directory+"/cache",exist_ok=True)
         try:
-            with open(cachedir+"main.txt","r") as file:
-                lines = file.readlines()
-                msg = ""
-                num = ""
-                for i in lines:
-                    line = i.strip()
-                    if line[:3] == "num":
-                        if msg != "" and num != "":
-                            self.msgs[num] = msg.strip()
-                        msg = ""
-                        num = line[3:]
-                    else:
-                        msg+="\n"+line
-                if msg != "" and num != "":
-                    self.msgs[num] = msg.strip()
+            config = configparser.ConfigParser()
+            config.read(cachedir+"main.txt")
+
+            i = 0
+            while True:
+                sect = "msg"+str(i)
+                if config.has_section(sect):
+                    msg = dict(config.items(sect))
+                    self.msgs[str(i)] = msg
+                    i += 1
+                    print("Loaded cache",sect)
+
+                    user = msg["user"]
+                    if not user in self.users:
+                        self.users[user] = self.request("user",user)
+
+                else:
+                    break
 
         except:
             pass
 
-
-    def start(self):
-        if self.join():
-        #self.request("default")
-            self.receive()
-
-    def request(self,cmd):
+    def request(self,cmd="",txt=""):
         try:
             self.c = socket.socket()
             self.c.connect(("localhost",9999))
 
-            print("request",cmd)
-            self.c.send(bytes(cmd,"utf-8"))
-            resp = self.c.recv(1024).decode()
+            msg = cmd + "\n" + self.userid + "\n" + self.password + "\n" + txt
+            msg = msg.strip()
+            print("request",msg)
+            self.c.send(bytes(msg,"utf-8"))
+            resp = self.c.recv(1024).decode().strip()
             print("resp",resp)
+
+            if len(resp) > 12 and resp[:5] == "Error" or resp[:12] == "Server error":
+                self.error["text"] = resp
 
             self.c.close()
             return resp
@@ -169,21 +177,13 @@ class client():
             self.error["text"] = "Error: " + str(e)
 
     def post(self):
-        _name = self.name
         _msg = self.msg_field.get(1.0,"end").strip()
-        print(_name,_msg)
-        if _name != "" and _msg != "":
-            _text = _name + ":\n" + _msg
-            _text = _text.strip()
-
-            print(_text)
-            self.request("post\n"+_text)
+        if _msg != "":
+            self.request("post",_msg)
             self.msg_field.delete(1.0,tk.END)
-            #self.receive()
-
+            self.receive()
 
     def receive(self):
-        self.win.after(2000,self.receive)
         count = int(self.request("num"))
 
         if count != self.msg_max+1:
@@ -192,47 +192,16 @@ class client():
             msg_min = count-51
             if msg_min < 0:
                 msg_min = 0
-
-            with open(cachedir+"main.txt","a") as file:
-                i = msg_max
-                while i >= msg_min:
-                    try:
-                        msg = self.msgs[str(i)]
-                    except:
-                        msg = self.request("get\n"+str(i))
-                        self.msgs[str(i)] = msg
-                        file.write("\nnum" + str(i) + "\n" + msg)
-                    if i > self.msg_max:
-                        self.msg_max = i
-                    if i < self.msg_min or self.msg_min == -1:
-                        self.msg_min = i
-
-                    i -= 1
+            self.chkmsg(msg_min,msg_max)
 
         elif self.scrollbar.get()[0] == 0 and self.msg_min > 0:
             msg_max = self.msg_min-1
             msg_min = msg_max-51
             if msg_min < 0:
                 msg_min = 0
-
-            with open(cachedir+"main.txt","a") as file:
-                i = msg_max
-                while i >= msg_min:
-                    try:
-                        msg = self.msgs[str(i)]
-                    except:
-                        msg = self.request("get\n"+str(i))
-                        self.msgs[str(i)] = msg
-                        file.write("\nnum" + str(i) + "\n" + msg)
-                    if i > self.msg_max:
-                        self.msg_max = i
-                    if i < self.msg_min or self.msg_min == -1:
-                        self.msg_min = i
-
-                    i -= 1
+            self.chkmsg(msg_min,msg_max)
 
         else: return
-
 
         print(len(self.msgs))
 
@@ -240,18 +209,50 @@ class client():
         self.label.delete(1.0,tk.END)
         for i in range(self.msg_min,self.msg_max+1):
             msg = self.msgs[str(i)]
-            for j in msg.split("\n"):
-                line = j.strip()
-                if line[0:3] == "usr":
-                    line = "\n"+line[3:]
-                    self.label.insert(tk.END,line+" ","User")
-                else:
-                    if line[0:3] == "msg":
-                        line = line[3:]
-                    self.label.insert(tk.END,line+"\n")
-                num += 1
+
+            self.label.insert(tk.END,"\n"+self.users[msg["user"]]+" ","User")
+            self.label.insert(tk.END,msg["date"][:16]+"\n","Date")
+            self.label.insert(tk.END,msg["msg"]+"\n")
         
         self.label.see(tk.END)
+
+    def chkmsg(self,msg_min,msg_max):
+        with open(cachedir+"main.txt","a") as file:
+            config = configparser.ConfigParser()
+            i = msg_max
+            while i >= msg_min:
+                sect = str(i)
+                try:
+                    msg = self.msgs[sect]
+                except Exception as e:
+                    #print(str(e))
+                    get = self.request("get",str(i))
+                    get = get.split("\n")
+                    print(get)
+                    msg = ""
+                    for j in get[2:]:
+                        msg += j+"\n"
+                    msg = msg.strip()
+                    md = {
+                        "user" : get[0],
+                        "date" : get[1],
+                        "msg" : msg
+                    }
+                    self.msgs[sect] = md
+
+                    user = md["user"]
+                    if not user in self.users:
+                        self.users[user] = self.request("user",user)
+
+                    config["msg"+sect] = md
+                if i > self.msg_max:
+                    self.msg_max = i
+                if i < self.msg_min or self.msg_min == -1:
+                    self.msg_min = i
+
+                i -= 1
+
+            config.write(file)
 
 
     def on_exit(self):
@@ -265,7 +266,7 @@ class client():
 
     def guiset(self):
         print("self guiset")
-        self.theme, self.accent = self.settings.guiset()
+        self.settings.guiset()
 
         #self.theming()
 
@@ -301,7 +302,7 @@ class client():
             col_side = theme["side"]
             col_text = theme["text"]
             col_high = theme["high"]
-            col_high_text = theme["high_text"]
+            col_comment = theme["comment"]
 
             col_button = accent["button"]
             col_user = accent["user"]
@@ -310,21 +311,21 @@ class client():
 
             #Update widget colours
             for i in self.ls_frame:
-                i["bg"] = col_bg
+                i.config(bg = col_bg)
             for i in self.ls_label:
-                i["bg"] = col_bg
-                i["fg"] = col_text
+                i.config(bg = col_bg,
+                         fg = col_text)
             for i in self.ls_button:
-                i["bg"] = col_button
-                i["fg"] = col_text
-                i["activebackground"] = col_button_high
-                i["activeforeground"] = col_text
+                i.config(bg = col_button,
+                         fg = col_text,
+                         activebackground = col_button_high,
+                         activeforeground = col_text)
             for i in self.ls_text:
-                i["bg"] = col_msg
-                i["fg"] = col_text
-                i["insertbackground"] = col_text
-                i["selectforeground"] = col_text
-                i["selectbackground"] = col_high
+                i.config(bg = col_msg,
+                         fg = col_text,
+                         insertbackground = col_text,
+                         selectforeground = col_text,
+                         selectbackground = col_high)
 
             self.scrollbar.config(bg=col_side,
                                   troughcolor=col_textbox,
@@ -334,9 +335,14 @@ class client():
             #Update widgets with other colours
             self.error["fg"] = "red"
             self.label.tag_configure("User",foreground=col_user,font=self.font+" 10 bold")
+            self.label.tag_configure("Date",foreground=col_comment)
             self.left["bg"] = col_side
             self.label["bg"] = col_textbox
             self.name_label["bg"] = col_side
+
+    def timed(self):
+        self.receive()
+        self.win.after(2000,self.timed)
 
     def logout(self):
         self.win.destroy()
@@ -347,7 +353,7 @@ class client():
             file.write("\n"+str(self.apply_theme))
         self.master.login()
 
-def main(user,master):
-    client(user,master)
+def main(user,master,password,userid):
+    client(user,master,password,userid)
 
 if __name__ == "__main__": print("Please run the program through chat_main.py")

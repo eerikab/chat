@@ -1,6 +1,9 @@
 import os
 import configparser
 import tkinter as tk
+from hashlib import sha256
+import socket
+import re
 
 class settings():
     def __init__(self,master="") -> None:
@@ -37,7 +40,7 @@ class settings():
                     "side" : config.get(sect,"Sidebar"),
                     "text" : config.get(sect,"Text"),
                     "high" : config.get(sect,"Highlight"),
-                    "high_text" : config.get(sect,"Highlight text")
+                    "comment" : config.get(sect,"Comment")
                 }
                 self.themelist.append(theme)
                 i+=1
@@ -93,7 +96,7 @@ class settings():
                 "Sidebar" : "#3f3f3f",
                 "Text" : "#f2f2f2",
                 "Highlight" : "#5a5a5a",
-                "Highlight text" : "#f2f2f2"
+                "Comment" : "#909090"
             }
             config["Theme 2"] = {
                 "Name" : "Light",
@@ -103,7 +106,7 @@ class settings():
                 "Sidebar" : "#dcdcdc",
                 "Text" : "#202020",
                 "Highlight" : "#c8c8c8",
-                "Highlight text" : "#202020"
+                "Comment" : "#8c8c8c"
             }
             config["Accent 1"] = {
                 "Name" : "Blue",
@@ -173,7 +176,7 @@ class settings():
             col_side = theme["side"]
             col_text = theme["text"]
             col_high = theme["high"]
-            col_high_text = theme["high_text"]
+            col_comment = theme["comment"]
 
             col_button = accent["button"]
             col_user = accent["user"] 
@@ -186,6 +189,9 @@ class settings():
             for i in self.ls_label:
                 i.config(bg = col_bg,
                          fg = col_text)
+            for i in self.ls_comment:
+                i.config(bg = col_bg,
+                         fg = col_comment)
             for i in self.ls_button:
                 i.config(bg = col_button,
                          fg = col_text,
@@ -212,9 +218,19 @@ class settings():
                     i["selectcolor"] = col_button
                 else:
                     i["selectcolor"] = col_msg
+            for i in self.ls_entry:
+                i.config(
+                    bg = col_msg,
+                    fg = col_text,
+                    insertbackground = col_text,
+                    selectbackground = col_high,
+                    selectforeground = col_text,
+                )
 
             self.field.tag_configure("User",foreground=col_user,font=self.font+" 10 bold")
+            self.field.tag_configure("Date",foreground=col_comment)
             self.error["fg"] = "red"
+            self.left["bg"] = col_side
 
             self.error["text"] = ""
             self.themed = 1
@@ -247,6 +263,9 @@ class settings():
         else:
             self.win = tk.Toplevel(window)
 
+        if self.master != "":
+            self.user = self.master.name
+
         self.win.title("Chat settings")
         self.theme_var = tk.StringVar(self.win)
         self.theme_var.set(self.themelist[0]["name"])
@@ -254,6 +273,7 @@ class settings():
         self.accent_var.set(self.accentlist[0]["name"])
         self.check_var = tk.IntVar(self.win)
         self.check_var.set(self.theme_apply)
+        self.page = tk.StringVar(self.win,value="Appearance")
 
         #Lists for managing widget themes
         self.ls_frame = []
@@ -262,12 +282,89 @@ class settings():
         self.ls_button = []
         self.ls_text = []
         self.ls_check = []
+        self.ls_entry = []
+        self.ls_comment = []
 
         #print(self.theme)
-        frame = tk.Frame(self.win)
-        frame.pack(expand=1,fill="both")
-        self.ls_frame.append(frame)
-        theme_text = tk.Label(frame,text="Theme:",width=50)
+
+        self.left = tk.Frame(self.win)
+        self.left.pack(side="left",fill="y")
+        self.ls_frame.append(self.left)
+        self.right = tk.Frame(self.win)
+        self.right.pack(side="right",fill="both",expand=1)
+        self.ls_frame.append(self.right)
+
+        self.button_theme = tk.Radiobutton(self.left, 
+                                        text="Appearance", 
+                                        value="Appearance", 
+                                        variable=self.page,
+                                        indicatoron=0,
+                                        borderwidth=0,
+                                        pady=4,
+                                        width=16,
+                                        highlightthickness=0,
+                                        command=self.switch
+                                        )
+        self.button_theme.pack()
+        self.ls_radio.append(self.button_theme)
+        self.button_acc = tk.Radiobutton(self.left, 
+                                        text="Account", 
+                                        value="Account", 
+                                        variable=self.page,
+                                        indicatoron=0,
+                                        borderwidth=0,
+                                        pady=4,
+                                        width=16,
+                                        highlightthickness=0,
+                                        command=self.switch
+                                        )
+        self.button_acc.pack()
+        self.ls_radio.append(self.button_acc)
+        self.button_about = tk.Radiobutton(self.left, 
+                                        text="About", 
+                                        value="About", 
+                                        variable=self.page,
+                                        indicatoron=0,
+                                        borderwidth=0,
+                                        pady=4,
+                                        width=16,
+                                        highlightthickness=0,
+                                        command=self.switch
+                                        )
+        self.button_about.pack()
+        self.ls_radio.append(self.button_about)
+
+        button_cancel = tk.Button(self.left,
+                                text="Close",
+                                highlightthickness=0,
+                                command=self.gui_close,
+                                width=9)
+        button_cancel.pack(pady=8,padx=8,side="bottom")
+        self.ls_button.append(button_cancel)
+
+        self.page_theme()
+        self.page_account()
+        self.page_about()
+
+        self.inloop = 1
+        self.themed = 0
+
+        self.local_theming()
+
+        self.win.geometry("560x440")
+        self.win.minsize(320,240)
+
+        print(self.theme_var.get(),self.accent_var.get())
+
+        if __name__ == "__main__":
+            self.win.mainloop()
+    
+    def page_theme(self):
+        self.frame_theme = tk.Frame(self.right)
+        self.frame_theme.pack()
+        self.ls_frame.append(self.frame_theme)
+        frame = self.frame_theme
+        theme_text = tk.Label(frame,text="Theme:")
         theme_text.pack()
         self.ls_label.append(theme_text)
         for i in self.themelist:
@@ -315,8 +412,9 @@ class settings():
         self.ls_check.append(theme_check)
 
         self.field = tk.Text(frame,width=50,height=3,highlightthickness=0,borderwidth=0)
-        self.field.insert(tk.END,"User: ","User")
-        self.field.insert(tk.END,"Sample message")
+        self.field.insert(tk.END,"User ","User")
+        self.field.insert(tk.END,"2024-04-10 00:45","Date")
+        self.field.insert(tk.END,"\nSample message")
         self.field.pack(padx=16)
         self.ls_text.append(self.field)
         
@@ -324,40 +422,211 @@ class settings():
         self.error.pack()
         self.ls_label.append(self.error)
 
-        frame_bottom = tk.Frame(frame)
-        frame_bottom.pack(fill="both",expand=1)
-        self.ls_frame.append(frame_bottom)
-        frame_bottom_left = tk.Frame(frame_bottom)
-        frame_bottom_left.pack(fill="both",expand=1,side="left")
-        self.ls_frame.append(frame_bottom_left)
-        frame_bottom_right = tk.Frame(frame_bottom)
-        frame_bottom_right.pack(fill="both",expand=1,side="right")
-        self.ls_frame.append(frame_bottom_right)
-
-        button_ok = tk.Button(frame_bottom_left,
-                            text="OK",
+        button_ok = tk.Button(frame,
+                            text="Save changes",
                             highlightthickness=0,
                             command=self.gui_ok)
         button_ok.pack(pady=8)
         self.ls_button.append(button_ok)
-        button_cancel = tk.Button(frame_bottom_right,
-                                text="Cancel",
-                                highlightthickness=0,
-                                command=self.gui_close)
-        
-        button_cancel.pack(pady=8)
-        self.ls_button.append(button_cancel)
-        self.inloop = 1
-        self.themed = 0
 
-        self.local_theming()
+    def page_account(self):
+        self.userid = "0"
+        try:
+            self.userid = self.master.userid
+        except:
+            pass
 
-        print(self.theme_var.get(),self.accent_var.get())
+        self.frame_account = tk.Frame(self.right)
+        #self.frame_account.pack()
+        self.ls_frame.append(self.frame_account)
+        frame = self.frame_account
+        label = tk.Label(frame,text="User ID: " + str(self.userid))
+        label.pack(padx=16,pady=8)
+        self.ls_label.append(label)
 
-        if __name__ == "__main__":
-            self.win.mainloop()
+        label = tk.Label(frame,text="Username: ")
+        label.pack()
+        self.ls_label.append(label)
+        self.user_change = tk.Entry(frame,highlightthickness=0,width=30)
+        self.user_change.pack()
+        self.ls_entry.append(self.user_change)
+        self.user_change.insert(0,self.user)
+        label = tk.Label(frame,text="4-32 characters; letters, numbers, spaces, \nunderscores, dashes, periods allowed")
+        label.pack()
+        self.ls_comment.append(label)
 
-        return self.theme_var.get(), self.accent_var.get()
+        label = tk.Label(frame,text="Change email: ")
+        label.pack()
+        self.ls_label.append(label)
+        self.email_change = tk.Entry(frame,highlightthickness=0,width=30)
+        self.email_change.pack()
+        self.ls_entry.append(self.email_change)
+
+        label = tk.Label(frame,text="Change password: ")
+        label.pack()
+        self.ls_label.append(label)
+        self.pass_change = tk.Entry(frame,highlightthickness=0,width=30,show="*")
+        self.pass_change.pack()
+        self.ls_entry.append(self.pass_change)
+
+        label = tk.Label(frame,text="8-64 characters")
+        label.pack()
+        self.ls_comment.append(label)
+
+        label = tk.Label(frame,text="Confirm new password: ")
+        label.pack()
+        self.ls_label.append(label)
+        self.pass_confirm = tk.Entry(frame,highlightthickness=0,width=30,show="*")
+        self.pass_confirm.pack()
+        self.ls_entry.append(self.pass_confirm)
+
+        label = tk.Label(frame)
+        label.pack()
+        self.ls_label.append(label)
+
+        label = tk.Label(frame,text="Enter current password to confirm changes: ")
+        label.pack()
+        self.ls_label.append(label)
+        self.pass_old = tk.Entry(frame,highlightthickness=0,width=30,show="*")
+        self.pass_old.pack()
+        self.ls_entry.append(self.pass_old)
+
+        self.error_account = tk.Label(frame)
+        self.error_account.pack()
+        self.ls_label.append(self.error_account)
+
+        button_ok = tk.Button(frame,
+                            text="Save changes",
+                            highlightthickness=0,
+                            command=self.submit)
+        button_ok.pack(pady=8)
+        self.ls_button.append(button_ok)
+    
+    def page_about(self):
+        self.frame_about = tk.Frame(self.right)
+        self.ls_frame.append(self.frame_about)
+        frame = self.frame_about
+        label = tk.Label(frame,text="About:")
+        label.pack(padx=16)
+        self.ls_label.append(label)
+        label = tk.Label(frame)
+        label.pack()
+        self.ls_label.append(label)
+        label = tk.Label(frame,text="Chat")
+        label.pack()
+        self.ls_label.append(label)
+        label = tk.Label(frame,text="Made by Eerik Abel")
+        label.pack()
+        self.ls_label.append(label)
+        label = tk.Label(frame,text="Offline edition")
+        label.pack()
+        self.ls_label.append(label)
+        label = tk.Label(frame,text="Version 0.0")
+        label.pack()
+        self.ls_label.append(label)
+        label = tk.Label(frame,text="Server version 0.0")
+        label.pack()
+        self.ls_label.append(label)
+        label = tk.Label(frame,text="Built on Python, Tkinter")
+        label.pack()
+        self.ls_label.append(label)
+
+    def switch(self):
+        if self.page.get() == "Account":
+            self.frame_theme.pack_forget()
+            self.frame_account.pack()
+            self.frame_about.pack_forget()
+        elif self.page.get() == "About":
+            self.frame_theme.pack_forget()
+            self.frame_account.pack_forget()
+            self.frame_about.pack()
+        else:
+            self.frame_theme.pack()
+            self.frame_account.pack_forget()
+            self.frame_about.pack_forget()
+
+    def submit(self):
+        self.error_account["text"] = "No changes made"
+        user = self.user_change.get().strip()
+        password = self.pass_change.get().strip()
+        pass2 = self.pass_confirm.get().strip()
+        email = self.email_change.get().strip()
+        pass_old = self.pass_old.get().strip()
+
+        pass_hash_new, email_hash = self.hashing(user, password, email)
+        pass_hash_old, email_hash = self.hashing(user, pass_old, email)
+
+        if pass_hash_old != self.password:
+            self.error_account["text"] = "Invalid password"
+            return
+
+        #Change username
+        if user != self.master.name:
+            if len(user) < 4 or len(user) > 32:
+                self.error_account["text"] = "Username must be 4-32 characters"
+                return
+            if self.regex_user(user) == False:
+                self.error_account["text"] = "Username contains invalid characters"
+                return
+            self.c = socket.socket()
+            self.c.connect(("localhost",9999))
+            self.c.send(bytes("update\n"+self.userid+"\n"+pass_hash_old+"\nusername\n"+user, "utf-8"))
+            resp = self.c.recv(1024).decode().strip()
+            self.c.close()
+            if resp == "OK":
+                self.master.name = user
+                self.user = user
+                self.error_account["text"] = "Changes saved"
+            else:
+                self.error_account["text"] = resp
+                return
+
+        #Change email
+        if len(email) > 0:
+            if self.regex_email(email) == False:
+                self.error_account["text"] = "Invalid email format"
+                return
+            self.c = socket.socket()
+            self.c.connect(("localhost",9999))
+            self.c.send(bytes("update\n"+self.userid+"\n"+pass_hash_old+"\nemail\n"+email_hash, "utf-8"))
+            resp = self.c.recv(1024).decode().strip()
+            self.c.close()
+            if resp == "OK":
+                self.error_account["text"] = "Changes saved"
+            else:
+                self.error_account["text"] = resp
+                return
+
+        #Change password
+        if len(password) > 0:
+            if len(password) > 0 and len(password) < 8:
+                self.error_account["text"] = "Password must be 8-64 characters"
+                return
+            
+            if password != pass2:
+                self.error_account["text"] = "Passwords do not match"
+                return
+            
+            self.c = socket.socket()
+            self.c.connect(("localhost",9999))
+            self.c.send(bytes("update\n"+self.userid+"\n"+pass_hash_old+"\npassword\n"+pass_hash_new, "utf-8"))
+            resp = self.c.recv(1024).decode().strip()
+            self.c.close()
+            if resp == "OK":
+                self.password = pass_hash_new
+                self.master.password = pass_hash_new
+                self.error_account["text"] = "Changes saved"
+            else:
+                self.error_account["text"] = resp
+                return
+
+        #Save changes
+        with open(self.file_settings,"w") as file:
+            file.write(user)
+            file.write("\n"+pass_hash_new)
+            file.write("\n"+self.theme_var.get())
+            file.write("\n"+self.accent_var.get())
+            file.write("\n"+str(self.check_var.get()))
 
     def gui_close(self):
         self.win.destroy()
@@ -365,7 +634,7 @@ class settings():
     def gui_ok(self):
         user = ""
         password = ""
-        self.win.destroy()
+        #self.win.destroy()
         try:
             with open(self.file_settings,"r") as file:
                 lines = file.readlines()
@@ -380,6 +649,30 @@ class settings():
                 file.write("\n"+str(self.check_var.get()))
             if self.master != "":
                 self.master.theming()
+
+    def hashing(self,username,password,email=""):
+        _user = sha256(bytes(username,"utf-8")).hexdigest()
+        _pass_txt = "[user]"+username+"[pass]"+password
+        _pass = sha256(bytes(_pass_txt,"utf-8")).hexdigest()
+        if email == "":
+            _email = ""
+        else:
+            _email = sha256(bytes(email,"utf-8")).hexdigest()
+        return _pass, _email
+    
+    def regex_email(self,email):
+        reg = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+        if re.fullmatch(reg,email):
+            return True
+        else:
+            return False
+        
+    def regex_user(self,user):
+        reg = r"[\w -]*"
+        if re.fullmatch(reg,user):
+            return True
+        else:
+            return False
 
 if __name__ == "__main__":
     gui = settings()
