@@ -6,14 +6,17 @@ import configparser
 import random
 import re
 
+'''Server code, stores data and hadles communication
+Keep seperate from the client'''
+
 #Data directories
 chatdir = os.path.dirname(__file__)+"/data/chat/"
 os.makedirs(chatdir, exist_ok=True) #Why should the folder already existing cause an error by default?
 userdir = os.path.dirname(__file__)+"/data/users/"
 os.makedirs(userdir, exist_ok=True)
 
-#Following file paths only work if there is only 1 chat room
-chatdir += "main.ini"
+#Following file paths only work if there is only 1 chat room or 1 user file
+chat_general = chatdir + "main.ini"
 userdir += "users.ini"
 
 #Create networking socket
@@ -31,28 +34,33 @@ for i in config.sections():
 
 print(str(len(users)) + " Users loaded\nReading messages")
 
-#Read saved messages from file
-config = configparser.ConfigParser()
-config.read(chatdir)
-msgs = []
-i = 0
+#Get the amount of posts
+posts = 0
 while True:
-    sect = "msg"+str(i)
-    if config.has_section("msg"+str(i)):
-        msgs.append(dict(config.items(sect)))
-        i += 1
-    else:
+    try:
+        config = configparser.ConfigParser()
+        path = chatdir+"post"+str(posts)+".ini"
+        print(path)
+        config.read(path)
+        if config.has_section("msg0"):
+            posts += 1
+        else:
+            print("Else")
+            break
+    except Exception as e:
+        print("Exception",e)
         break
-    
-print(str(len(msgs)) + " messages found. Init done!")
 
+print(str(posts) + " posts found")
+
+print("Init done")
 s.listen(3)
 print("Waiting for connections")
 
 def time():
     return str(datetime.datetime.now(datetime.UTC))[:22]
 
-def post(txt):
+def respond(txt):
     print("Response", txt)
     c.send(bytes(txt,"utf-8"))
 
@@ -78,9 +86,39 @@ def regex_user(user):
 
 def commands(get):
     cmd = get[0]
+    global posts
 
     #Responses
-    if cmd == "post":
+    if cmd == "message":
+        user = get[1]
+        msg = ""
+        date = time()
+        post = chatdir+get[3]+".ini"
+
+        if not validate(get):
+            return "Error: Invalid credentials"
+        
+        for i in get[4:]:
+            msg += i+"\n"
+        msg = msg.strip()
+
+        config = configparser.ConfigParser()
+        config.read(post)
+        length = len(config)-1
+
+        with open(post,"a") as file:
+            config = configparser.ConfigParser()
+            md = {
+                "user" : user,
+                "date" : date,
+                "msg" : msg
+            }
+            
+            config["msg"+str(length)] = md
+            config.write(file)
+            return "OK"
+
+    elif cmd == "post":
         user = get[1]
         msg = ""
         date = time()
@@ -92,31 +130,45 @@ def commands(get):
             msg += i+"\n"
         msg = msg.strip()
 
-        with open(chatdir,"a") as file:
+        with open(chatdir+"post"+str(posts)+".ini","a") as file:
             config = configparser.ConfigParser()
             md = {
                 "user" : user,
                 "date" : date,
                 "msg" : msg
             }
-            
-            config["msg"+str(len(msgs))] = md
+
+            posts += 1
+            config["msg0"] = md
             config.write(file)
-            msgs.append(md)
             return "OK"
 
     elif cmd == "num":
+        post = get[3]
         if not validate(get):
             return "Error: Invalid credentials"
-        return str(len(msgs))
+        config = configparser.ConfigParser()
+        config.read(chatdir + post + ".ini")
+        return str(len(config)-1)
+    
+    elif cmd == "postnum":
+        if not validate(get):
+            return "Error: Invalid credentials"
+        return str(posts)
 
     elif cmd == "get":
+        post = get[3]
         if not validate(get):
             return "Error: Invalid credentials"
-        ls = msgs[int(get[3])]
+        config = configparser.ConfigParser()
+        config.read(chatdir + post + ".ini")
+        ls = config[get[4]]
         msg = ls["user"] + "\n" + ls["date"] + "\n" + ls["msg"]
         
         return msg
+    
+    elif cmd == "default":
+        return "OK"
     
     elif cmd == "user":
         if not validate(get):
@@ -190,7 +242,7 @@ def commands(get):
 
             for i in users:
                 if i != userid:
-                    if users[userid]["username"] == user:
+                    if users[userid]["username"] == new:
                         return "Error: Username taken"
             
             users[userid][mode] = new
@@ -201,12 +253,12 @@ def commands(get):
         elif mode == "email":
             for i in users:
                 if i != userid:
-                    if users[userid]["email"] == user:
+                    if users[userid]["email"] == new:
                         return "Error: Email taken"
             users[userid][mode] = hashing(new)
 
         else:
-            return "Invalid type of data"
+            return "Error: Invalid type of data"
         
         #Update user
         config = configparser.ConfigParser()
@@ -227,12 +279,12 @@ while True:
         get = c.recv(1024).decode().split("\n")
         print("Connected with ", addr, time(), get)
         resp = commands(get)
-        post(resp)
+        respond(resp)
 
 
     except Exception as e:
         try:
-            post("Server error: "+str(e))
+            respond("Server error: "+str(e))
         except Exception as e:
             print("Failed connection with client")
             

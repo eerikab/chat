@@ -1,7 +1,9 @@
-import socket
 import tkinter as tk
 import os
 import chat_settings
+import chat_widgets as cw
+
+'''Login window for client app'''
 
 save = os.path.dirname(__file__)+"/chat_settings.txt"
 
@@ -36,7 +38,7 @@ class client():
         
         self.master = master
         self.success = 0
-
+        cw.theme_init(self)
 
         self.win = tk.Toplevel(master.win)
         self.win.title("Chat login")
@@ -47,49 +49,26 @@ class client():
         self.remvar = tk.IntVar()
         self.page = tk.StringVar(value="Login")
 
-        #Lists for managing widget themes
-        self.ls_frame = []
-        self.ls_label = []
-        self.ls_entry = []
-        self.ls_button = []
-        self.ls_check = []
-        self.ls_radio = []
-        self.ls_comment = []
-
         #Widgets
-        self.left = tk.Frame(self.win)
-        self.left.pack(side="left",fill="y")
-        self.ls_frame.append(self.left)
-        self.right = tk.Frame(self.win)
-        self.right.pack(side="right",fill="both",expand=1)
-        self.ls_frame.append(self.right)
+        self.left = cw.frame(self,self.win,side="left",fill="y")
+        self.right = cw.frame(self,self.win,side="right",fill="both",expand=1)
         
-        self.button_login = tk.Radiobutton(self.left, 
+        self.button_login = cw.radio(self,self.left, 
                                         text="Login", 
                                         value="Login", 
                                         variable=self.page,
-                                        indicatoron=0,
-                                        borderwidth=0,
-                                        pady=4,
+                                        padiy=4,
                                         width=16,
-                                        highlightthickness=0,
                                         command=self.switch
                                         )
-        self.button_login.pack()
-        self.ls_radio.append(self.button_login)
-        self.button_reg = tk.Radiobutton(self.left, 
+        self.button_reg = cw.radio(self,self.left, 
                                         text="Register", 
                                         value="Register", 
                                         variable=self.page,
-                                        indicatoron=0,
-                                        borderwidth=0,
-                                        pady=4,
+                                        padiy=4,
                                         width=16,
-                                        highlightthickness=0,
                                         command=self.switch
                                         )
-        self.button_reg.pack()
-        self.ls_radio.append(self.button_reg)
 
         #Pages
         self.login = login(self)
@@ -102,22 +81,13 @@ class client():
         self.setting = chat_settings.settings()
         self.theming()
 
-        if self.user == "":
-            if self.join():
-                self.c.send(bytes("Default","utf-8"))
-            self.c.close()
+        ch, resp = self.setting.request("default")
+        if ch:
+            if self.user != "":
+                self.autosubmit()
         else:
-            self.autosubmit()
-    
-    def join(self):
-        try:
-            self.c = socket.socket()
-            self.c.connect(("localhost",9999))
-            return 1
-        except:
-            self.login.error["text"] = "Could not connect to server"
             self.register.error["text"] = "Could not connect to server"
-            return 0
+            self.login.error["text"] = "Could not connect to server"
         
     def switch(self):
         if self.page.get() == "Register":
@@ -129,29 +99,27 @@ class client():
 
     def autosubmit(self):
         self.pass_hash = self.password
-        if self.join():
-            self.c.send(bytes("login\n"+self.user+"\n"+self.pass_hash, "utf-8"))
-
-            resp = self.c.recv(1024).decode()
+        ch, resp = self.setting.request("login\n"+self.user+"\n"+self.pass_hash)
+        if ch:
             try:
                 self.userid = int(resp)
                 self.success = 1
-                self.master.client(self.user,self.pass_hash,self.userid)
-                self.win.destroy()
             except:
                 self.login.error["text"] = resp
                 pass
-            self.c.close()
+            if self.success:
+                self.master.client(self.user,self.pass_hash,self.userid)
+                self.win.destroy()
+        else:
+            self.login.error["text"] = resp
 
     def submit(self):
         self.login.error["text"] = ""
         self.user = self.login.entry_name.get().strip()
         self.password = self.login.entry_pass.get().strip()
         self.pass_hash, self.email_hash = self.setting.hashing(self.user,self.password)
-        if self.join():
-            self.c.send(bytes("login\n"+self.user+"\n"+self.pass_hash, "utf-8"))
-
-            resp = self.c.recv(1024).decode()
+        ch, resp = self.setting.request("login\n"+self.user+"\n"+self.pass_hash)
+        if ch:
             try:
                 self.userid = int(resp)
                 with open(save,"w") as file:
@@ -164,12 +132,14 @@ class client():
                     file.write("\n"+self.accent)
                     file.write("\n"+str(self.apply_theme))
                 self.success = 1
-                self.master.client(self.user,self.pass_hash,self.userid)
-                self.win.destroy()
             except:
                 self.login.error["text"] = resp
                 pass
-            self.c.close()
+            if self.success:
+                self.master.client(self.user,self.pass_hash,self.userid)
+                self.win.destroy()
+        else:
+            self.login.error["text"] = resp
 
     def signup(self):
         self.register.error["text"] = ""
@@ -204,9 +174,7 @@ class client():
             return
         
         if self.join():
-            self.c.send(bytes("register\n"+self.user+"\n"+self.pass_hash+"\n"+self.email_hash, "utf-8"))
-
-            resp = self.c.recv(1024).decode().strip()
+            ch, resp = self.setting.request("register\n"+self.user+"\n"+self.pass_hash+"\n"+self.email_hash)
             try:
                 self.userid = int(resp)
                 with open(save,"w") as file:
@@ -216,24 +184,18 @@ class client():
                     file.write("\n"+self.accent)
                     file.write("\n"+str(self.apply_theme))
                 self.success = 1
-                self.master.client(self.user,self.pass_hash,self.userid)
-                self.win.destroy()
             except:
                 self.register.error["text"] = resp
                 pass
-            self.c.close()
+            if self.success:
+                self.master.client(self.user,self.pass_hash,self.userid)
+                self.win.destroy()
 
     def theming(self):
         #Function used to theme local settings window
-        for i in [self.ls_button,self.ls_label,self.ls_check,self.ls_entry,self.ls_radio]:
-            for j in i:
-                j["font"] = self.font + " 10"
-        
         if self.apply_theme:
             #Get theme colours
-            theme, accent = self.setting.theming(self.theme,self.accent)
-            self.theme = theme["name"]
-            self.accent = accent["name"]
+            theme, accent = cw.theming(self,self.theme,self.accent)
             #print("Theming",self.theme_var.get(),self.accent_var.get())
             col_bg = theme["bg"]
             col_textbox = theme["textbox"]
@@ -249,42 +211,7 @@ class client():
             col_select = accent["selected"]
 
             #Update widget colours
-            for i in self.ls_frame:
-                i.config(bg = col_bg)
             self.left["bg"] = col_side
-            for i in self.ls_label:
-                i.config(bg = col_bg,
-                         fg = col_text)
-            for i in self.ls_comment:
-                i.config(bg = col_bg,
-                         fg = col_comment)
-            for i in self.ls_button:
-                i.config(bg = col_button,
-                         fg = col_text,
-                         activebackground = col_button_high,
-                         activeforeground = col_text)
-            for i in self.ls_check:
-                i.config(bg = col_bg,
-                         fg = col_text,
-                         activebackground = col_high,
-                         activeforeground = col_text)
-                if self.login.remvar.get():
-                    i["selectcolor"] = col_button
-                else:
-                    i["selectcolor"] = col_msg
-            for i in self.ls_entry:
-                i.config(bg = col_msg,
-                         fg = col_text,
-                         insertbackground = col_text,
-                         selectforeground = col_text,
-                         selectbackground = col_high)
-            for i in self.ls_radio:
-                i.config(bg = col_msg,
-                         fg = col_text,
-                         activebackground = col_high,
-                         activeforeground = col_text,
-                         selectcolor = col_select)
-
             self.login.error["fg"] = "red"
             self.register.error["fg"] = "red"
 
@@ -297,104 +224,48 @@ class login():
         global cl
         self.master = master
 
-        self.frame = tk.Frame(self.master.right)
-        self.frame.pack(fill="both")
-        self.master.ls_frame.append(self.frame)
-        
-        #Widgets
-        label = tk.Label(self.frame,text="Welcome!")
-        label.pack(pady=8)
-        self.master.ls_label.append(label)
-        label = tk.Label(self.frame,text="Username:")
-        label.pack()
-        self.master.ls_label.append(label)
-
-        self.entry_name = tk.Entry(self.frame,highlightthickness=0,width=25)
-        self.entry_name.pack()
-        self.master.ls_entry.append(self.entry_name)
-        self.entry_name.insert(0,master.user)
-
-        label = tk.Label(self.frame,text="Password:")
-        label.pack()
-        self.master.ls_label.append(label)
-        
-        self.entry_pass = tk.Entry(self.frame,highlightthickness=0,width=25,show="*")
-        self.entry_pass.pack()
-        self.master.ls_entry.append(self.entry_pass)
-
         self.remvar = tk.IntVar()
-        self.remember = tk.Checkbutton(self.frame,text="Remember me",variable=self.remvar,highlightthickness=0,command=self.master.theming)
-        self.remember.pack()
-        self.master.ls_check.append(self.remember)
+        #Widgets
+        self.frame = cw.frame(self.master,self.master.right,fill="both")
+        cw.label(self.master,self.frame,text="Welcome!",pady=8)
 
-        self.error = tk.Label(self.frame)
-        self.error.pack()
-        self.master.ls_label.append(self.error)
+        cw.label(self.master,self.frame,text="Username:")
+        self.entry_name = cw.entry(self.master,self.frame,width=25)
+        self.entry_name.insert(0,master.user)
+        
+        cw.label(self.master,self.frame,text="Password:")
+        self.entry_pass = cw.entry(self.master,self.frame,width=25,show="*")
 
-        self.send = tk.Button(self.frame, text="Log in", command=master.submit,highlightthickness=0)
-        self.send.pack(pady=8)
-        self.master.ls_button.append(self.send)
+        self.remember = cw.check(self.master,self.frame,text="Remember me",variable=self.remvar,command=self.master.theming)
+        self.error = cw.label(self.master,self.frame)
+        self.send = cw.button(self.master,self.frame, text="Log in", command=master.submit, pady=8)
 
 class register():
     def __init__(self,master) -> None:
         global cl
         self.master = master
 
-        self.frame = tk.Frame(self.master.right)
+        self.frame = cw.frame(self.master,self.master.right)
         #self.frame.pack(fill="both")
-        self.master.ls_frame.append(self.frame)
+        self.frame.pack_forget()
         
         #Widgets
-        label = tk.Label(self.frame,text="Welcome!")
-        label.pack(pady=8)
-        self.master.ls_label.append(label)
-        label = tk.Label(self.frame,text="Email:")
-        label.pack()
-        self.master.ls_label.append(label)
+        cw.label(self.master,self.frame,text="Welcome!",pady=8)
+        cw.label(self.master,self.frame,text="Email:")
+        self.entry_email = cw.entry(self.master,self.frame,width=25)
 
-        self.entry_email = tk.Entry(self.frame,highlightthickness=0,width=25)
-        self.entry_email.pack()
-        self.master.ls_entry.append(self.entry_email)
+        cw.label(self.master,self.frame,text="Username:")
+        self.entry_name = cw.entry(self.master,self.frame,width=25)
+        cw.comment(self.master,self.frame,text="4-32 characters; letters, numbers, spaces, \nunderscores, dashes, periods allowed")
 
-        label = tk.Label(self.frame,text="Username:")
-        label.pack()
-        self.master.ls_label.append(label)
+        cw.label(self.master,self.frame,text="Password:")
+        self.entry_pass = cw.entry(self.master,self.frame,width=25,show="*")
+        cw.comment(self.master,self.frame,text="8-64 characters")
+        cw.label(self.master,self.frame,text="Confirm password:")
+        self.pass2 = cw.entry(self.master,self.frame,width=25,show="*")
 
-        self.entry_name = tk.Entry(self.frame,highlightthickness=0,width=25)
-        self.entry_name.pack()
-        self.master.ls_entry.append(self.entry_name)
-
-        label = tk.Label(self.frame,text="4-32 characters; letters, numbers, spaces, \nunderscores, dashes, periods allowed")
-        label.pack()
-        self.master.ls_comment.append(label)
-
-        label = tk.Label(self.frame,text="Password:")
-        label.pack()
-        self.master.ls_label.append(label)
-        
-        self.entry_pass = tk.Entry(self.frame,highlightthickness=0,width=25,show="*")
-        self.entry_pass.pack()
-        self.master.ls_entry.append(self.entry_pass)
-
-        label = tk.Label(self.frame,text="8-64 characters")
-        label.pack()
-        self.master.ls_comment.append(label)
-
-        label = tk.Label(self.frame,text="Confirm password:")
-        label.pack()
-        self.master.ls_label.append(label)
-        
-        self.pass2 = tk.Entry(self.frame,highlightthickness=0,width=25,show="*")
-        self.pass2.pack()
-        self.master.ls_entry.append(self.pass2)
-
-        self.error = tk.Label(self.frame)
-        self.error.pack()
-        self.master.ls_label.append(self.error)
-
-        self.send = tk.Button(self.frame, text="Sign up", command=master.signup,highlightthickness=0)
-        self.send.pack(pady=8)
-        self.master.ls_button.append(self.send)
+        self.error = cw.label(self.master,self.frame)
+        self.send = cw.button(self.master,self.frame, text="Sign up", command=master.signup,pady=8)
 
 def main(master):
     global cl
