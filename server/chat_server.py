@@ -6,18 +6,24 @@ import configparser
 import random
 import re
 
-'''Server code, stores data and hadles communication
-Keep seperate from the client'''
+'''Server code, stores data and handles communication
+Keep separate from the client'''
 
 #Data directories
-chatdir = os.path.dirname(__file__)+"/data/chat/"
-os.makedirs(chatdir, exist_ok=True) #Why should the folder already existing cause an error by default?
-userdir = os.path.dirname(__file__)+"/data/users/"
-os.makedirs(userdir, exist_ok=True)
+dir_chat = os.path.dirname(__file__)+"/data/chat/"
+dir_user = os.path.dirname(__file__)+"/data/users/"
+os.makedirs(dir_user, exist_ok=True) #Why should the folder already existing cause an error by default?
+
+dir_post = dir_chat + "posts/" #Posts
+dir_msg = dir_chat + "msg/" #Direct messages
+dir_group = dir_chat + "group/" #Group chats
+os.makedirs(dir_post, exist_ok=True)
+os.makedirs(dir_msg, exist_ok=True)
+os.makedirs(dir_group, exist_ok=True)
 
 #Following file paths only work if there is only 1 chat room or 1 user file
-chat_general = chatdir + "main.ini"
-userdir += "users.ini"
+dir_general = dir_chat + "main.ini"
+dir_user += "users.ini"
 
 #Create networking socket
 s = socket.socket()
@@ -27,7 +33,7 @@ print("Socket created\nReading user list")
 
 #Read user data
 config = configparser.ConfigParser()
-config.read(userdir)
+config.read(dir_user)
 users = dict()
 for i in config.sections():
     users[i] = dict(config.items(i))
@@ -39,7 +45,7 @@ posts = 0
 while True:
     try:
         config = configparser.ConfigParser()
-        path = chatdir+"post"+str(posts)+".ini"
+        path = dir_post+"post"+str(posts)+".ini"
         print(path)
         config.read(path)
         if config.has_section("msg0"):
@@ -61,6 +67,8 @@ def time():
     return str(datetime.datetime.now(datetime.UTC))[:22]
 
 def respond(txt):
+    if len(txt) > 1024:
+        txt = "Server error: response too long"
     print("Response", txt)
     c.send(bytes(txt,"utf-8"))
 
@@ -71,11 +79,15 @@ def validate(get):
     user = get[1]
     password = get[2]
     config = configparser.ConfigParser()
-    config.read(userdir)
+    config.read(dir_user)
     if config[user]["password"] == hashing(password):
         return True
     else:
         return False
+    
+def randnum():
+    #Random 16 digit number in string format
+    return str(random.randrange(1_000_000_000_000_000, 9_999_999_999_999_999))
     
 def regex_user(user):
         reg = r"[\w .-]*"
@@ -83,6 +95,40 @@ def regex_user(user):
             return "OK"
         else:
             return "Error: Username contains invalid characters"
+        
+def user_exists(name,key="username"):
+    for i in users:
+        j = users[i]
+        if j[key] == name:
+            return i
+    
+    return ""
+
+def get_directory(file="",userid=""):
+    #Find the appropriate directory based on filename
+    if file[:4] == "post":
+        #Post files start with "post", followed by index
+        return dir_post + file + ".ini"
+    elif len(file) == 16 and file.isdigit():
+        #Direct message names are composed of both user IDs, smaller first
+        #Here, userid is caller and file is callee
+        if int(file) < int(userid):
+            chat_id = file + userid
+        else:
+            chat_id = userid + file
+        return dir_msg + chat_id + ".ini"
+    
+    else:
+        #Misc stuff defaults to the parent directory
+        return dir_chat + file + ".ini"
+    
+def update_users():
+    config = configparser.ConfigParser()
+    for i in users:
+        config[i] = users[i]
+    with open(dir_user,"w") as file:
+        config.write(file)
+
 
 def commands(get):
     cmd = get[0]
@@ -93,7 +139,9 @@ def commands(get):
         user = get[1]
         msg = ""
         date = time()
-        post = chatdir+get[3]+".ini"
+        post = get[3]
+
+        post = get_directory(post,user)
 
         if not validate(get):
             return "Error: Invalid credentials"
@@ -104,7 +152,11 @@ def commands(get):
 
         config = configparser.ConfigParser()
         config.read(post)
-        length = len(config)-1
+
+        if "users" in config:
+            length = len(config)-2
+        else:
+            length = len(config)-1
 
         with open(post,"a") as file:
             config = configparser.ConfigParser()
@@ -130,7 +182,7 @@ def commands(get):
             msg += i+"\n"
         msg = msg.strip()
 
-        with open(chatdir+"post"+str(posts)+".ini","a") as file:
+        with open(dir_post+"post"+str(posts)+".ini","a") as file:
             config = configparser.ConfigParser()
             md = {
                 "user" : user,
@@ -144,12 +196,15 @@ def commands(get):
             return "OK"
 
     elif cmd == "num":
-        post = get[3]
+        post = get_directory(get[3],get[1])
         if not validate(get):
             return "Error: Invalid credentials"
         config = configparser.ConfigParser()
-        config.read(chatdir + post + ".ini")
-        return str(len(config)-1)
+        config.read(post)
+        if "users" in config:
+            return str(len(config)-2)
+        else:
+            return str(len(config)-1)
     
     elif cmd == "postnum":
         if not validate(get):
@@ -157,11 +212,11 @@ def commands(get):
         return str(posts)
 
     elif cmd == "get":
-        post = get[3]
+        post = get_directory(get[3],get[1])
         if not validate(get):
             return "Error: Invalid credentials"
         config = configparser.ConfigParser()
-        config.read(chatdir + post + ".ini")
+        config.read(post)
         ls = config[get[4]]
         msg = ls["user"] + "\n" + ls["date"] + "\n" + ls["msg"]
         
@@ -207,19 +262,16 @@ def commands(get):
                 return "Error: Email taken"
         
         #Random 16-digit user ID
-        userid = str(random.randrange(1_000_000_000_000_000, 9_999_999_999_999_999))
+        userid = randnum()
 
         while userid in users:
-            userid = str(random.randrange(1_000_000_000_000_000, 9_999_999_999_999_999))
+            userid = randnum()
         users[userid] = {"username" : user,
                          "password" : password,
                          "email" : email}
         
         #Save new user
-        config = configparser.ConfigParser()
-        with open(userdir,"a") as file:
-            config[userid] = users[userid]
-            config.write(file)
+        update_users()
 
         return userid
     
@@ -233,6 +285,7 @@ def commands(get):
             return "Error: Invalid credentials"
 
         if mode == "username":
+            pw = get[5]
             if len(new) < 4 or len(new) > 32:
                 return "Error: Username must be 4-32 characters"
             
@@ -240,36 +293,89 @@ def commands(get):
             if reg != "OK":
                 return reg
 
-            for i in users:
-                if i != userid:
-                    if users[userid]["username"] == new:
-                        return "Error: Username taken"
+            if user_exists(new):
+                return "Error: Username taken"
             
             users[userid][mode] = new
+            users[userid]["password"] = hashing(pw)
 
         elif mode == "password":
             users[userid][mode] = hashing(new)
 
         elif mode == "email":
-            for i in users:
-                if i != userid:
-                    if users[userid]["email"] == new:
-                        return "Error: Email taken"
+            if user_exists(hashing(new),"email"):
+                return "Error: Email taken"
             users[userid][mode] = hashing(new)
 
         else:
             return "Error: Invalid type of data"
         
         #Update user
-        config = configparser.ConfigParser()
-        with open(userdir,"r") as file:
-            config.read(file)
-        with open(userdir,"w") as file:
-            config[userid] = users[userid]
-            config.write(file)
+        update_users()
 
         return "OK"
     
+    elif cmd == "add_contact":
+        if not validate(get):
+            return "Error: Invalid credentials"
+        
+        user = get[1] #ID of caller user
+        other_user = get[3] #Name of second user
+
+        other_id = user_exists(other_user)
+        if not other_id:
+            return "Error: User not found"
+
+        chat_path = get_directory(other_id,user)
+
+        if os.path.exists(chat_path):
+            return("Error: User already in contacts")
+        
+        #Add users to list
+        i = 0
+        while "msg"+str(i) in users[user]:
+            i += 1
+        users[user]["msg"+str(i)] = other_id
+
+        i = 0
+        while "msg"+str(i) in users[other_id]:
+            i += 1
+        users[other_id]["msg"+str(i)] = user
+
+        #Add users to chat data, smaller ID first
+        with open(chat_path,"w") as file:
+            config = configparser.ConfigParser()
+            if int(user) < int(other_id):
+                config["users"] = {
+                    "user1" : user,
+                    "user2" : other_id
+                }
+            else:
+                config["users"] = {
+                    "user1" : other_id,
+                    "user2" : user
+                }
+
+            config.write(file)
+
+        update_users()
+        
+        return "Contact added"
+    
+    elif cmd == "contacts":
+        if not validate(get):
+            return "Error: Invalid credentials"
+        
+        user = get[1]
+
+        i = 0
+        text = ""
+        while "msg"+str(i) in users[user]:
+            text += users[user]["msg"+str(i)] + "\n"
+            i += 1
+
+        return text.strip()
+
     return "Error: Invalid function"
 
 while True:
@@ -280,7 +386,6 @@ while True:
         print("Connected with ", addr, time(), get)
         resp = commands(get)
         respond(resp)
-
 
     except Exception as e:
         try:

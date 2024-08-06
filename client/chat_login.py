@@ -1,4 +1,3 @@
-import tkinter as tk
 import os
 import chat_settings
 import chat_widgets as cw
@@ -38,19 +37,14 @@ class client():
         
         self.master = master
         self.success = 0
-        cw.theme_init(self)
 
-        self.win = tk.Toplevel(master.win)
-        self.win.title("Chat login")
+        self.win = cw.window(self,"Chat login",size="560x420",minsize=(320,240))
+        #self.win.on_exit(self.win.destroyall)
 
-        self.font = os.path.dirname(__file__)+"/fonts/Cantarell.ttf"
-        self.font_bold = os.path.dirname(__file__)+"/fonts/Cantarell-Bold.ttf"
-
-        self.remvar = tk.IntVar()
-        self.page = tk.StringVar(value="Login")
+        self.page = cw.stringvar("Login")
 
         #Widgets
-        self.left = cw.frame(self,self.win,side="left",fill="y")
+        self.left = cw.frame(self,self.win,side="left",fill="y",bg="side")
         self.right = cw.frame(self,self.win,side="right",fill="both",expand=1)
         
         self.button_login = cw.radio(self,self.left, 
@@ -74,10 +68,6 @@ class client():
         self.login = login(self)
         self.register = register(self)
 
-        self.win.geometry("480x360")
-        self.win.minsize(320,240)
-        self.win.protocol('WM_DELETE_WINDOW', self.close)
-
         self.setting = chat_settings.settings()
         self.theming()
 
@@ -86,8 +76,8 @@ class client():
             if self.user != "":
                 self.autosubmit()
         else:
-            self.register.error["text"] = "Could not connect to server"
-            self.login.error["text"] = "Could not connect to server"
+            self.register.error.set("Could not connect to server")
+            self.login.error.set("Could not connect to server")
         
     def switch(self):
         if self.page.get() == "Register":
@@ -105,25 +95,25 @@ class client():
                 self.userid = int(resp)
                 self.success = 1
             except:
-                self.login.error["text"] = resp
+                self.login.error.set(resp)
                 pass
             if self.success:
                 self.master.client(self.user,self.pass_hash,self.userid)
                 self.win.destroy()
         else:
-            self.login.error["text"] = resp
+            self.login.error.set(resp)
 
     def submit(self):
-        self.login.error["text"] = ""
+        self.login.error.set("")
         self.user = self.login.entry_name.get().strip()
         self.password = self.login.entry_pass.get().strip()
-        self.pass_hash, self.email_hash = self.setting.hashing(self.user,self.password)
+        self.pass_hash = self.setting.hash_password(self.user,self.password)
         ch, resp = self.setting.request("login\n"+self.user+"\n"+self.pass_hash)
         if ch:
             try:
                 self.userid = int(resp)
                 with open(save,"w") as file:
-                    if self.login.remvar.get():
+                    if self.login.remember.variable.get():
                         file.write(self.user)
                         file.write("\n"+self.pass_hash)
                     else:
@@ -133,48 +123,48 @@ class client():
                     file.write("\n"+str(self.apply_theme))
                 self.success = 1
             except:
-                self.login.error["text"] = resp
+                self.login.error.set(resp)
                 pass
             if self.success:
                 self.master.client(self.user,self.pass_hash,self.userid)
                 self.win.destroy()
         else:
-            self.login.error["text"] = resp
+            self.login.error.set(resp)
 
     def signup(self):
-        self.register.error["text"] = ""
-        self.user = self.register.entry_name.get().strip()
-        self.password = self.register.entry_pass.get().strip()
-        self.pass2 = self.register.pass2.get().strip()
-        self.email = self.register.entry_email.get().strip()
-        self.pass_hash, self.email_hash = self.setting.hashing(self.user, self.password, self.email)
+        self.register.error.set("")
+        self.user = self.register.entry_name.get()
+        self.password = self.register.entry_pass.get()
+        self.pass2 = self.register.pass2.get()
+        self.email = self.register.entry_email.get()
+        self.pass_hash = self.setting.hash_password(self.user, self.password)
 
         if self.user == "" or self.password == "" or self.pass2 == "" or self.email == "":
-            self.register.error["text"] = "Please fill all fields"
+            self.register.error.set("Please fill all fields")
             return
         
         if len(self.user) < 4 or len(self.user) > 32:
-            self.register.error["text"] = "Username must be 4-32 characters"
+            self.register.error.set("Username must be 4-32 characters")
             return
         
         if len(self.password) < 8 or len(self.password) > 64:
-            self.register.error["text"] = "Password must be 8-64 characters"
+            self.register.error.set("Password must be 8-64 characters")
             return
         
         if self.password != self.pass2:
-            self.register.error["text"] = "Passwords do not match"
+            self.register.error.set("Passwords do not match")
             return
         
         if self.setting.regex_email(self.email) == False:
-            self.register.error["text"] = "Invalid email format"
+            self.register.error.set("Invalid email format")
             return
         
         if self.setting.regex_user(self.user) == False:
-            self.register.error["text"] = "Username contains invalid characters"
+            self.register.error.set("Username contains invalid characters")
             return
         
-        if self.join():
-            ch, resp = self.setting.request("register\n"+self.user+"\n"+self.pass_hash+"\n"+self.email_hash)
+        ch, resp = self.setting.request("register\n"+self.user+"\n"+self.pass_hash+"\n"+self.email_hash)
+        if ch:
             try:
                 self.userid = int(resp)
                 with open(save,"w") as file:
@@ -185,7 +175,7 @@ class client():
                     file.write("\n"+str(self.apply_theme))
                 self.success = 1
             except:
-                self.register.error["text"] = resp
+                self.register.error.set(resp)
                 pass
             if self.success:
                 self.master.client(self.user,self.pass_hash,self.userid)
@@ -195,53 +185,33 @@ class client():
         #Function used to theme local settings window
         if self.apply_theme:
             #Get theme colours
-            theme, accent = cw.theming(self,self.theme,self.accent)
-            #print("Theming",self.theme_var.get(),self.accent_var.get())
-            col_bg = theme["bg"]
-            col_textbox = theme["textbox"]
-            col_msg = theme["msg"]
-            col_side = theme["side"]
-            col_text = theme["text"]
-            col_high = theme["high"]
-            col_comment = theme["comment"]
-
-            col_button = accent["button"]
-            col_user = accent["user"]
-            col_button_high = accent["button_high"]
-            col_select = accent["selected"]
-
-            #Update widget colours
-            self.left["bg"] = col_side
-            self.login.error["fg"] = "red"
-            self.register.error["fg"] = "red"
+            cw.theming(self,self.theme,self.accent)
 
     def close(self):
         self.win.destroy()
-        self.master.win.destroy()
 
 class login():
-    def __init__(self,master) -> None:
+    def __init__(self,master=client) -> None:
         global cl
         self.master = master
 
-        self.remvar = tk.IntVar()
         #Widgets
         self.frame = cw.frame(self.master,self.master.right,fill="both")
         cw.label(self.master,self.frame,text="Welcome!",pady=8)
 
         cw.label(self.master,self.frame,text="Username:")
-        self.entry_name = cw.entry(self.master,self.frame,width=25)
-        self.entry_name.insert(0,master.user)
+        self.entry_name = cw.entry(self.master,self.frame)
+        self.entry_name.insert(master.user)
         
         cw.label(self.master,self.frame,text="Password:")
-        self.entry_pass = cw.entry(self.master,self.frame,width=25,show="*")
+        self.entry_pass = cw.entry(self.master,self.frame,show="*")
 
-        self.remember = cw.check(self.master,self.frame,text="Remember me",variable=self.remvar,command=self.master.theming)
-        self.error = cw.label(self.master,self.frame)
+        self.remember = cw.check(self.master,self.frame,text="Remember me",command=self.master.theming)
+        self.error = cw.error(self.master,self.frame)
         self.send = cw.button(self.master,self.frame, text="Log in", command=master.submit, pady=8)
 
 class register():
-    def __init__(self,master) -> None:
+    def __init__(self,master=client) -> None:
         global cl
         self.master = master
 
@@ -252,19 +222,19 @@ class register():
         #Widgets
         cw.label(self.master,self.frame,text="Welcome!",pady=8)
         cw.label(self.master,self.frame,text="Email:")
-        self.entry_email = cw.entry(self.master,self.frame,width=25)
+        self.entry_email = cw.entry(self.master,self.frame)
 
         cw.label(self.master,self.frame,text="Username:")
-        self.entry_name = cw.entry(self.master,self.frame,width=25)
+        self.entry_name = cw.entry(self.master,self.frame)
         cw.comment(self.master,self.frame,text="4-32 characters; letters, numbers, spaces, \nunderscores, dashes, periods allowed")
 
         cw.label(self.master,self.frame,text="Password:")
-        self.entry_pass = cw.entry(self.master,self.frame,width=25,show="*")
+        self.entry_pass = cw.entry(self.master,self.frame,show="*")
         cw.comment(self.master,self.frame,text="8-64 characters")
         cw.label(self.master,self.frame,text="Confirm password:")
-        self.pass2 = cw.entry(self.master,self.frame,width=25,show="*")
+        self.pass2 = cw.entry(self.master,self.frame,show="*")
 
-        self.error = cw.label(self.master,self.frame)
+        self.error = cw.error(self.master,self.frame)
         self.send = cw.button(self.master,self.frame, text="Sign up", command=master.signup,pady=8)
 
 def main(master):

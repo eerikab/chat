@@ -1,4 +1,3 @@
-import tkinter as tk
 import os
 import chat_settings
 import chat_widgets as cw
@@ -27,10 +26,11 @@ class guiset():
             self.theme_apply = 1
 
         #Create window
-        if window == "":
-            self.win = tk.Tk()
+        if master == "":
+            close = 1
         else:
-            self.win = tk.Toplevel(window)
+            close = 0
+        self.win = cw.window(self,"Chat settings","640x480",(480,360),close_all=close)
 
         self.master = master
         if self.master != "":
@@ -38,22 +38,13 @@ class guiset():
 
         self.themelist = self.settings.themelist
         self.accentlist = self.settings.accentlist
-        cw.theme_init(self)
 
-        self.font = os.path.dirname(__file__)+"/fonts/Cantarell.ttf"
-        self.font_bold = os.path.dirname(__file__)+"/fonts/Cantarell-Bold.ttf"
-
-        self.win.title("Chat settings")
-        self.theme_var = tk.StringVar(self.win)
-        self.theme_var.set(self.themelist[0]["name"])
-        self.accent_var = tk.StringVar(self.win)
-        self.accent_var.set(self.accentlist[0]["name"])
-        self.check_var = tk.IntVar(self.win)
-        self.check_var.set(self.theme_apply)
-        self.page = tk.StringVar(self.win,value="Appearance")
+        self.theme_var = cw.stringvar(self.themelist[0]["name"])
+        self.accent_var = cw.stringvar(self.accentlist[0]["name"])
+        self.page = cw.stringvar("Appearance")
 
         #Widgets
-        self.left = cw.frame(self,self.win,side="left",fill="y")
+        self.left = cw.frame(self,self.win,side="left",fill="y",bg="side")
         self.right = cw.frame(self,self.win,side="right",fill="both",expand=1)
 
         self.button_theme = cw.radio(self,self.left, 
@@ -81,13 +72,13 @@ class guiset():
                                         command=self.switch
                                         )
 
-        button_cancel = cw.button(self,self.left,
-                                text="Close",
-                                command=self.gui_close,
-                                width=9,
-                                side="bottom",
-                                pady=16,
-                                padx=8)
+        cw.button(self,self.left,
+                    text="Close",
+                    command=self.gui_close,
+                    width=9,
+                    side="bottom",
+                    pady=16,
+                    padx=8)
 
         self.page_theme()
         self.page_account()
@@ -98,11 +89,8 @@ class guiset():
 
         self.local_theming()
 
-        self.win.geometry("560x440")
-        self.win.minsize(320,240)
-
         if __name__ == "__main__":
-            self.win.mainloop()
+            cw.root.mainloop()
     
     def page_theme(self):
         self.frame_theme = cw.frame(self,self.right)
@@ -110,14 +98,14 @@ class guiset():
         cw.label(self,frame,text="Theme:")
         for i in self.themelist:
             name = i["name"]
-            theme_select = cw.radio(self,frame, 
-                                        text=name, 
-                                        value=name, 
-                                        variable=self.theme_var,
-                                        padiy=4,
-                                        width=20,
-                                        command=self.local_theming
-                                        )
+            cw.radio(self,frame, 
+                    text=name, 
+                    value=name, 
+                    variable=self.theme_var,
+                    padiy=4,
+                    width=20,
+                    command=self.local_theming
+                    )
             if name == self.theme:
                 self.theme_var.set(name)
         
@@ -125,69 +113,54 @@ class guiset():
         cw.label(self,frame,text="Accent Color:")
         for i in self.accentlist:
             name = i["name"]
-            accent_select = cw.radio(self,frame, 
-                                        text=name, 
-                                        value=name, 
-                                        variable=self.accent_var,
-                                        padiy=4,
-                                        width=20,
-                                        command=self.local_theming
-                                        )
+            cw.radio(self,frame, 
+                    text=name, 
+                    value=name, 
+                    variable=self.accent_var,
+                    padiy=4,
+                    width=20,
+                    command=self.local_theming
+                    )
             if name == self.accent:
                 self.accent_var.set(name)
 
-        cw.check(self,frame,variable=self.check_var,text="Apply theming",command=self.local_theming,pady=8)
+        self.check_apply = cw.check(self,frame,text="Apply theming",command=self.local_theming,pady=8)
+        self.check_apply.variable.set(self.theme_apply)
 
         self.field = cw.text(self,frame,width=50,height=3,padx=16,borderwidth=0)
-        self.field.insert(tk.END,"User ","User")
-        self.field.insert(tk.END,"2024-04-10 00:45","Date")
-        self.field.insert(tk.END,"\nSample message")
+        self.field.insert("User ","User")
+        self.field.insert("2024-04-10 00:45","Date")
+        self.field.insert("\nSample message")
         
-        self.error = cw.label(self,frame)
+        self.error = cw.error(self,frame)
 
-        button_ok = cw.button(self,frame,
-                            text="Save changes",
-                            pady=8,
-                            command=self.gui_ok)
+        cw.button(self,frame,
+                    text="Save changes",
+                    pady=8,
+                    command=self.gui_ok)
 
     def page_account(self):
-        self.userid = "0"
         try:
             self.userid = self.master.userid
         except:
-            pass
+            self.userid = "0"
 
         self.frame_account = cw.frame(self,self.right)
         self.frame_account.pack_forget()
         frame = self.frame_account
 
         cw.label(self,frame,text="User ID: " + str(self.userid),padx=16,pady=8)
-        cw.label(self,frame,text="Username: ")
-        self.user_change = cw.entry(self,frame,highlightthickness=0,width=30)
-        self.user_change.insert(0,self.user)
-        cw.comment(self,frame,text="4-32 characters; letters, numbers, spaces, \nunderscores, dashes, periods allowed")
+        cw.label(self,frame,text="Username: " + self.user)
 
-        cw.label(self,frame,text="Change email: ")
-        self.email_change = cw.entry(self,frame,highlightthickness=0,width=30)
+        cw.button(self,frame,text="Change username",width=15,pady=8,command=self.change_name)
+        cw.button(self,frame,text="Change password",width=15,pady=8,command=self.change_password)
+        cw.button(self,frame,text="Change email",width=15,pady=8,command=self.change_email)
 
-        cw.label(self,frame,text="Change password: ")
-        self.pass_change = cw.entry(self,frame,highlightthickness=0,width=30,show="*")
-        cw.comment(self,frame,text="8-64 characters")
+        self.frame_change = cw.frame(self,frame)
+        self.frame_change.pack_forget()
 
-        cw.label(self,frame,text="Confirm new password: ")
-        self.pass_confirm = cw.entry(self,frame,highlightthickness=0,width=30,show="*")
-
-        cw.label(self,frame)
-
-        cw.label(self,frame,text="Enter current password to confirm changes: ")
-        self.pass_old = cw.entry(self,frame,highlightthickness=0,width=30,show="*")
-
-        self.error_account = cw.label(self,frame)
-
-        button_ok = cw.button(self,frame,
-                            text="Save changes",
-                            pady=8,
-                            command=self.submit)
+        self.account_widgets()
+        self.change_current = ""
     
     def page_about(self):
         self.frame_about = cw.frame(self,self.right)
@@ -202,6 +175,67 @@ class guiset():
         cw.label(self,frame,text="Server version -")
         cw.label(self,frame,text="Built on Python, Tkinter")
 
+    def account_widgets(self):
+        frame = self.frame_change
+
+        self.label_change_new = cw.label(self,frame,text="Change email: ")
+        self.change_new = cw.entry(self,frame,highlightthickness=0,width=30)
+
+        self.comment_change = cw.comment(self,frame,text="8-64 characters")
+
+        frame_confirm = cw.frame(self,frame)
+        self.frame_confirm = cw.frame(self,frame_confirm)
+
+        cw.label(self,self.frame_confirm,text="Confirm new password: ")
+        self.change_confirm = cw.entry(self,self.frame_confirm,highlightthickness=0,width=30,show="*")
+
+        cw.label(self,self.frame_confirm)
+
+        cw.label(self,frame,text="Enter current password to confirm changes: ")
+        self.change_old_pass = cw.entry(self,frame,highlightthickness=0,width=30,show="*")
+
+        self.error_account = cw.label(self,frame)
+
+        cw.button(self,frame,
+                text="Save changes",
+                pady=8,
+                command=self.submit)
+        
+        self.change_new.get()
+        self.change_confirm.get()
+        self.change_old_pass.get()
+        
+    def change_standard(self):
+        self.frame_change.pack()
+        self.change_new.clear()
+        self.change_confirm.clear()
+        self.change_old_pass.clear()
+        
+    def change_name(self):
+        self.label_change_new.set("Change username:")
+        self.comment_change.set("4-32 characters; letters, numbers, - _ . allowed")
+        self.frame_confirm.pack_forget()
+        self.change_current = "username"
+        self.change_standard()
+        self.change_new.insert(self.user)
+        self.change_new.uncensor()
+
+    def change_password(self):
+        self.label_change_new.set("Change password:")
+        self.comment_change.set("8-64 characters")
+        self.frame_confirm.pack()
+        self.change_current = "password"
+        self.change_standard()
+        self.change_new.censor()
+
+    def change_email(self):
+        self.label_change_new.set("Change email:")
+        self.comment_change.set("Must be in a valid format")
+        self.frame_confirm.pack_forget()
+        self.change_current = "email"
+        self.change_standard()
+        self.change_new.uncensor()
+        
     def switch(self):
         if self.page.get() == "Account":
             self.frame_theme.pack_forget()
@@ -217,75 +251,82 @@ class guiset():
             self.frame_about.pack_forget()
 
     def submit(self):
-        self.error_account["text"] = "No changes made"
-        user = self.user_change.get().strip()
-        password = self.pass_change.get().strip()
-        pass2 = self.pass_confirm.get().strip()
-        email = self.email_change.get().strip()
-        pass_old = self.pass_old.get().strip()
+        self.error_account.set("No changes made")
+        new = self.change_new.get()
+        confirm = self.change_confirm.get()
+        password = self.change_old_pass.get()
 
-        pass_hash_new, email_hash = self.hashing(user, password, email)
-        pass_hash_old, email_hash = self.hashing(self.user, pass_old, email)
+        pass_hash_old = self.settings.hash_password(self.user, password)
 
         if pass_hash_old != self.password:
-            self.error_account["text"] = "Invalid password"
+            self.error_account.set("Invalid password")
             return
 
         #Change username
-        if user != self.master.name:
-            if len(user) < 4 or len(user) > 32:
-                self.error_account["text"] = "Username must be 4-32 characters"
+        if self.change_current == "username":
+            if len(new) < 4 or len(new) > 32:
+                self.error_account.set("Username must be 4-32 characters")
                 return
-            if self.regex_user(user) == False:
-                self.error_account["text"] = "Username contains invalid characters"
+            if self.settings.regex_user(new) == False:
+                self.error_account.set("Username contains invalid characters")
                 return
-            ch, resp = self.settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\nusername\n"+user)
-            if resp == "OK":
-                self.master.name = user
-                self.user = user
-                self.error_account["text"] = "Changes saved"
+            
+            pass_hash_new = self.settings.hash_password(new, password)
+            ch, resp = self.settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\nusername\n"+new+"\n"+pass_hash_new)
+            if ch:
+                self.master.name = new
+                self.user = new
+                self.password = pass_hash_new
+                self.master.password = self.password
+                self.error_account.set("Changes saved")
             else:
-                self.error_account["text"] = resp
+                self.error_account.set(resp)
                 return
 
         #Change email
-        if len(email) > 0:
-            if self.regex_email(email) == False:
-                self.error_account["text"] = "Invalid email format"
+        if self.change_current == "email" and len(new) > 0:
+            email_hash = self.settings.hashing(new)
+            if self.settings.regex_email(new) == False:
+                self.error_account.set("Invalid email format")
                 return
             ch, resp = self.settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\nemail\n"+email_hash)
-            if resp == "OK":
-                self.error_account["text"] = "Changes saved"
+            if ch:
+                self.error_account.set("Changes saved")
             else:
-                self.error_account["text"] = resp
+                self.error_account.set(resp)
                 return
 
         #Change password
-        if len(password) > 0:
-            if len(password) > 0 and len(password) < 8:
-                self.error_account["text"] = "Password must be 8-64 characters"
+        if self.change_current == "password" and len(new) > 0:
+            if len(new) > 64 or len(new) < 8:
+                self.error_account.set("Password must be 8-64 characters")
                 return
             
-            if password != pass2:
-                self.error_account["text"] = "Passwords do not match"
+            if new != confirm:
+                self.error_account.set("Passwords do not match")
                 return
+            
+            pass_hash_new = self.settings.hash_password(self.user, new)
             
             ch, resp = self.settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\npassword\n"+pass_hash_new)
             if resp == "OK":
                 self.password = pass_hash_new
                 self.master.password = pass_hash_new
-                self.error_account["text"] = "Changes saved"
+                self.error_account.set("Changes saved")
             else:
-                self.error_account["text"] = resp
+                self.error_account.set(resp)
                 return
 
         #Save changes
         with open(self.file_settings,"w") as file:
-            file.write(user)
-            file.write("\n"+pass_hash_new)
+            if self.check_apply.variable.get():
+                file.write(self.user)
+                file.write("\n"+self.password)
+            else:
+                file.write("\n")
             file.write("\n"+self.theme_var.get())
             file.write("\n"+self.accent_var.get())
-            file.write("\n"+str(self.check_var.get()))
+            file.write("\n"+str(self.check_apply.variable.get()))
 
     def gui_close(self):
         self.win.destroy()
@@ -305,40 +346,21 @@ class guiset():
                 file.write("\n"+password)
                 file.write("\n"+self.theme_var.get())
                 file.write("\n"+self.accent_var.get())
-                file.write("\n"+str(self.check_var.get()))
+                file.write("\n"+str(self.check_apply.variable.get()))
             if self.master != "":
                 self.master.theming()
 
     def local_theming(self,list_frame=[],list_label=[],list_button=[],list_radio=[]):
         #Function used to theme local settings window
-        if self.check_var.get() or self.themed:
+        if self.check_apply.variable.get() or self.themed:
             #Get theme colours
-            theme, accent = cw.theming(self,self.theme_var.get(),self.accent_var.get())
-            col_bg = theme["bg"]
-            col_textbox = theme["textbox"]
-            col_msg = theme["msg"]
-            col_side = theme["side"]
-            col_text = theme["text"]
-            col_high = theme["high"]
-            col_comment = theme["comment"]
+            cw.theming(self,self.theme_var.get(),self.accent_var.get())
 
-            col_button = accent["button"]
-            col_user = accent["user"] 
-            col_button_high = accent["button_high"]
-            col_select = accent["selected"]
-
-            #Update widget colours
-
-            self.field.tag_configure("User",foreground=col_user,font=self.font+" 10 bold")
-            self.field.tag_configure("Date",foreground=col_comment)
-            self.error["fg"] = "red"
-            self.left["bg"] = col_side
-
-            self.error["text"] = ""
+            self.error.set("")
             self.themed = 1
         
-        if self.check_var.get() == 0 and self.themed:
-            self.error["text"] = "Please restart to disable theming"
+        if self.check_apply.variable.get() == 0 and self.themed:
+            self.error.set("Please restart to disable theming")
 
 if __name__ == "__main__":
     guiset()
