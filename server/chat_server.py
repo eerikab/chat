@@ -1,3 +1,6 @@
+'''Server code, stores data and handles communication
+Keep separate from the client'''
+
 import socket
 import os
 import datetime
@@ -5,9 +8,12 @@ import hashlib
 import configparser
 import random
 import re
+import sys
 
-'''Server code, stores data and handles communication
-Keep separate from the client'''
+#Versions
+version = "0.0.0"
+py_version = sys.version.split()[0]
+print("Python version",sys.version)
 
 #Data directories
 dir_chat = os.path.dirname(__file__)+"/data/chat/"
@@ -64,7 +70,7 @@ s.listen(3)
 print("Waiting for connections")
 
 def time():
-    return str(datetime.datetime.now(datetime.UTC))[:22]
+    return str(datetime.datetime.now(datetime.timezone.utc))[:22]
 
 def respond(txt):
     if len(txt) > 1024:
@@ -240,7 +246,7 @@ def commands(get):
             j = users[i]
             if user == j["username"] and password == j["password"]:
                 return i
-        return "Invalid username or password"
+        return "Error: Invalid username or password"
 
     elif cmd == "register":
         user = get[1]
@@ -278,7 +284,7 @@ def commands(get):
     elif cmd == "update":
         userid = get[1]
         mode = get[3]
-        new = get[4]
+        new_raw = get[4]
 
         #Error checking
         if not validate(get):
@@ -286,13 +292,18 @@ def commands(get):
 
         if mode == "username":
             pw = get[5]
+            new = new_raw
+
             if len(new) < 4 or len(new) > 32:
                 return "Error: Username must be 4-32 characters"
             
             reg = regex_user(new)
             if reg != "OK":
                 return reg
-
+            
+            if users[userid][mode] == new:
+                return "Error: No changes made"
+            
             if user_exists(new):
                 return "Error: Username taken"
             
@@ -300,12 +311,22 @@ def commands(get):
             users[userid]["password"] = hashing(pw)
 
         elif mode == "password":
-            users[userid][mode] = hashing(new)
+            new = hashing(new_raw)
+
+            if users[userid][mode] == new:
+                return "Error: No changes made"
+            
+            users[userid][mode] = new
 
         elif mode == "email":
-            if user_exists(hashing(new),"email"):
+            new = hashing(new_raw)
+
+            if users[userid][mode] == new:
+                return "Error: No changes made"
+            if user_exists(new,"email"):
                 return "Error: Email taken"
-            users[userid][mode] = hashing(new)
+            
+            users[userid][mode] = new
 
         else:
             return "Error: Invalid type of data"
@@ -375,6 +396,9 @@ def commands(get):
             i += 1
 
         return text.strip()
+    
+    elif cmd == "version":
+        return version
 
     return "Error: Invalid function"
 

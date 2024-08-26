@@ -1,17 +1,17 @@
-import tkinter as tk
-from tkinter import ttk
-import chat_settings
-import os
-
 '''GUI widgets, automates creating and theming Tkinter widgets
 Unifies widgets used by all windows, though they can be individually modified'''
 
-setting = chat_settings.settings()
+import tkinter as tk
+from tkinter import ttk
+import chat_settings as setting
+import os
+import chat_global as cg
 
 #Font
-font_family = "Noto Sans"
-font = (font_family,10)
-font_bold = (font_family,10,"bold")
+font_family = "Montserrat"
+font_size = 10
+font = (font_family,font_size,"normal")
+font_bold = (font_family,font_size,"bold")
 
 #Lists for configuring
 ls_window = []
@@ -35,6 +35,8 @@ def default():
 root = tk.Tk()
 root.withdraw() #Disable the main window
 
+cw_theme = setting.theming() #Init theming
+
 class window():
     def __init__(self,window,title="Chat",size="640x480",minsize=(0,0),bg = "bg",close_all=1):
         #Create Tk window
@@ -45,6 +47,8 @@ class window():
         self.widget.minsize(minsize[0],minsize[1])
         ls_window.append(self)
         self.color = {"bg" : bg}
+        if cg.apply_theme:
+            self.theming()
 
         #When pressing the X button on titlebar, end the entire program
         if close_all:
@@ -60,12 +64,17 @@ class window():
         #End Tkinter session
         root.destroy()
 
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]])
+
 def stringvar(var=""):
     return tk.StringVar(root,var)
 
 
 #Widgets
 #All create the respective Tk widget in one line and return the widget
+
+#Base widgets
 class frame():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",bg = "bg"):
         self.window = window
@@ -73,12 +82,17 @@ class frame():
         self.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_frame.append(self)
         self.color = {"bg":bg}
+        if cg.apply_theme:
+            self.theming()
 
     def pack(self,padx=0,pady=0,side="top",expand=0,fill="none"):
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
 
     def pack_forget(self):
         self.widget.pack_forget()
+
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]])
 
 class label():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",width=0,bg = "bg",fg = "text",bold=False):
@@ -92,9 +106,15 @@ class label():
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_label.append(self)
         self.color = {"bg":bg, "fg":fg}
+        if cg.apply_theme:
+            self.theming()
 
     def set(self,txt):
         self.widget["text"] = txt
+
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.master.color["bg"]],
+            fg = cw_theme[self.color["fg"]])
 
 class entry():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",width=30,show="",highlightthickness=0,
@@ -104,6 +124,8 @@ class entry():
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_entry.append(self)
         self.color = {"bg":bg, "fg":fg, "insertbackground":insertbackground, "selectforeground":selectforeground, "selectbackground":selectbackground}
+        if cg.apply_theme:
+            self.theming()
 
     def insert(self,txt):
         self.widget.insert(0,txt)
@@ -120,6 +142,13 @@ class entry():
     def uncensor(self):
         self.widget.config(show="")
 
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]],
+            fg = cw_theme[self.color["fg"]],
+            insertbackground = cw_theme[self.color["insertbackground"]],
+            selectforeground = cw_theme[self.color["selectforeground"]],
+            selectbackground = cw_theme[self.color["selectbackground"]])
+
 class text():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",width=20,height=3,highlightthickness=0,borderwidth=1,
                  bg = "textbox",fg = "text",selectbackground = "high",selectforeground = "text",insertbackground = "text",user="user",date="comment"):
@@ -129,6 +158,8 @@ class text():
         ls_text.append(self)
         self.color = {"bg":bg, "fg":fg, "insertbackground":insertbackground, "selectforeground":selectforeground, "selectbackground":selectbackground,
                       "user":user, "date":date}
+        if cg.apply_theme:
+            self.theming()
 
     def erase(self):
         self.widget.delete(1.0,tk.END)
@@ -145,6 +176,15 @@ class text():
 
     def enable(self):
         self.widget.config(state="normal")
+    
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]],
+                fg = cw_theme[self.color["fg"]],
+                selectbackground = cw_theme[self.color["selectbackground"]],
+                selectforeground = cw_theme[self.color["selectforeground"]],
+                insertbackground = cw_theme[self.color["insertbackground"]])
+        self.widget.tag_configure("User",foreground=cw_theme[self.color["user"]] , font=font_bold)
+        self.widget.tag_configure("Date",foreground=cw_theme[self.color["date"]])
 
 class button():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",highlightthickness=0,command=0,width=0,justify="center",wraplength=0,anchor="center",
@@ -155,10 +195,18 @@ class button():
         ls_button.append(self)
         self.color = {"bg":bg, "fg":fg, "activebackground":activebackground, "activeforeground":activeforeground}
         self.i = i
+        if cg.apply_theme:
+            self.theming()
         
     def destroy(self):
         ls_button.remove(self)
         self.widget.destroy()
+
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]],
+            fg = cw_theme[self.color["fg"]],
+            activebackground = cw_theme[self.color["activebackground"]],
+            activeforeground = cw_theme[self.color["activeforeground"]])
 
 class radio():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",value="",variable=0,indicatoron=0,command=default,
@@ -169,7 +217,16 @@ class radio():
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_radio.append(self)
         self.color = {"bg":bg, "fg":fg, "activebackground":activebackground, "activeforeground":activeforeground, "selectcolor":selectcolor}
+        if cg.apply_theme:
+            self.theming()
 
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]],
+            fg = cw_theme[self.color["fg"]],
+            activebackground = cw_theme[self.color["activebackground"]],
+            activeforeground = cw_theme[self.color["activeforeground"]],
+            selectcolor = cw_theme[self.color["selectcolor"]])
+    
 class scroll():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",command=default,highlightthickness=0,borderwidth=0,bg="side",troughcolor="textbox",activebackground="high"):
         self.window = window
@@ -177,34 +234,40 @@ class scroll():
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_scroll.append(self)
         self.color = {"bg":bg, "activebackground":activebackground, "troughcolor":troughcolor}
+        if cg.apply_theme:
+            self.theming()
 
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]],
+            troughcolor = cw_theme[self.color["troughcolor"]],
+            activebackground = cw_theme[self.color["activebackground"]])
+        
 class check():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",highlightthickness=0,command=default,
-                 bg = "bg",fg = "text",activebackground = "high",activeforeground = "text",selectcolor = "msg",activecolor = "button"):
-        self.variable = tk.IntVar()
+                 bg = "bg",fg = "text",activebackground = "high",activeforeground = "text",selectcolor = "msg",activecolor = "button",value=0):
+        self.variable = tk.IntVar(root, value=value)
         self.window = window
         self.widget = tk.Checkbutton(master.widget,text=text,variable=self.variable,highlightthickness=highlightthickness,command=command,font=font)
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_check.append(self)
         self.color = {"bg":bg, "fg":fg, "activebackground":activebackground, "activeforeground":activeforeground, "selectcolor":selectcolor, "activecolor":activecolor}
+        if cg.apply_theme:
+            self.theming()
 
-class comment(label):
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "bg",fg = "comment"):
-        self.window = window
-        self.master = master
-        self.widget = tk.Label(master.widget,text=text,font=font)
-        self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
-        ls_comment.append(self)
-        self.color = {"bg":bg, "fg":fg}
+    def get(self):
+        return self.variable.get()
+    
+    def set_value(self,value):
+        self.variable.set(value)
 
-class error(label):
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "bg",fg = "error"):
-        self.window = window
-        self.master = master
-        self.widget = tk.Label(master.widget,text=text,font=font)
-        self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
-        ls_comment.append(self)
-        self.color = {"bg":bg, "fg":fg}
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]],
+            fg = cw_theme[self.color["fg"]],
+            activebackground = cw_theme[self.color["activebackground"]],
+            activeforeground = cw_theme[self.color["activeforeground"]],
+            selectcolor = cw_theme[self.color["selectcolor"]])
+        if self.variable.get():
+            self.widget["selectcolor"] = cw_theme[self.color["activecolor"]]
 
 class canvas():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",highlightthickness=0,bg="textbox"):
@@ -212,7 +275,35 @@ class canvas():
         self.widget = tk.Canvas(master.widget,highlightthickness=highlightthickness,)
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_canvas.append(self)
-        self.color = {"bg":bg} 
+        self.color = {"bg":bg}
+        if cg.apply_theme:
+            self.theming()
+
+    def theming(self):
+        self.widget.config(bg = cw_theme[self.color["bg"]])
+
+#Modified versions of base widgets
+class comment(label):
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "bg",fg = "comment"):
+        self.window = window
+        self.master = master
+        self.widget = tk.Label(master.widget,text=text,font=font)
+        self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
+        ls_label.append(self)
+        self.color = {"bg":bg, "fg":fg}
+        if cg.apply_theme:
+            self.theming()
+
+class error(label):
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "bg",fg = "error"):
+        self.window = window
+        self.master = master
+        self.widget = tk.Label(master.widget,text=text,font=font)
+        self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
+        ls_label.append(self)
+        self.color = {"bg":bg, "fg":fg}
+        if cg.apply_theme:
+            self.theming()
 
 class canvas_window():
     def __init__(self,window,master) -> None:
@@ -248,108 +339,18 @@ class canvas_window():
         self.canvas.widget.itemconfigure(self.frame_id, width=self.canvas.widget.winfo_width())
 
 #Theming
-def theming(window,_theme,_accent):
+def theming():
     '''Get theme colours'''
-    theme = setting.theming(_theme,_accent)
+    global cw_theme
+    cw_theme = setting.theming()
+
+    if not cg.apply_theme:
+        return
 
     #Update widget colours
-    for i in ls_frame:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_label:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.master.color["bg"]],
-                    fg = theme[i.color["fg"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_comment:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    fg = theme[i.color["fg"]])
-        except Exception as e:
-            print(e)
-    for i in ls_error:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.master.color["bg"]],
-                    fg = theme[i.color["fg"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_button:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    fg = theme[i.color["fg"]],
-                    activebackground = theme[i.color["activebackground"]],
-                    activeforeground = theme[i.color["activeforeground"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_check:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    fg = theme[i.color["fg"]],
-                    activebackground = theme[i.color["activebackground"]],
-                    activeforeground = theme[i.color["activeforeground"]],
-                    selectcolor = theme[i.color["selectcolor"]])
-                if i.variable.get():
-                    i.widget["selectcolor"] = theme[i.color["activecolor"]]
-        except Exception as e:
-            print(e) 
-    for i in ls_entry:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    fg = theme[i.color["fg"]],
-                    insertbackground = theme[i.color["insertbackground"]],
-                    selectforeground = theme[i.color["selectforeground"]],
-                    selectbackground = theme[i.color["selectbackground"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_text:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    fg = theme[i.color["fg"]],
-                    selectbackground = theme[i.color["selectbackground"]],
-                    selectforeground = theme[i.color["selectforeground"]],
-                    insertbackground = theme[i.color["insertbackground"]])
-                i.widget.tag_configure("User",foreground=theme[i.color["user"]] , font=font_bold)
-                i.widget.tag_configure("Date",foreground=theme[i.color["date"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_radio:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    fg = theme[i.color["fg"]],
-                    activebackground = theme[i.color["activebackground"]],
-                    activeforeground = theme[i.color["activeforeground"]],
-                    selectcolor = theme[i.color["selectcolor"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_scroll:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]],
-                    troughcolor = theme[i.color["troughcolor"]],
-                    activebackground = theme[i.color["activebackground"]])
-        except Exception as e:
-            print(e) 
-    for i in ls_canvas:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]])
-        except Exception as e:
-            print(e)
-    for i in ls_window:
-        try:
-            if i.window == window:
-                i.widget.config(bg = theme[i.color["bg"]])
-        except Exception as e:
-            print(e)
+    for i in [ls_window, ls_frame, ls_label, ls_entry, ls_text, ls_button, ls_check, ls_radio, ls_scroll, ls_canvas]:
+        for j in i:
+            try:
+                j.theming()
+            except Exception as e:
+                pass

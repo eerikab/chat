@@ -1,10 +1,11 @@
-import chat_settings
+'''Main window of client app, chatting rooms and messages'''
+
+import chat_settings as settings
 import os
 import configparser
 import chat_widgets as cw
 import chat_settings_gui as csg
-
-'''Main window of client app, chatting rooms and messages'''
+import chat_global as cg
 
 delay = 1000
 run = 1
@@ -14,16 +15,12 @@ cachedir = directory+"/cache/"
 
 class client():
 
-    def __init__(self,user,master,password,userid) -> None:
+    def __init__(self,master) -> None:
 
         #Initialise window
         self.win = cw.window(self,"Chat","800x600",(640,480))
 
         self.master = master
-
-        self.name = user
-        self.userid = str(userid)
-        self.password = password
 
         self.page = cw.stringvar("Messages")
         self.friend = cw.stringvar("main")
@@ -71,7 +68,7 @@ class client():
                 width=8,
                 side="bottom",
                 padx=16)
-        self.name_label = cw.label(self,self.left, text="Logged in as\n"+self.name,width=16,side="bottom",pady=8)
+        self.name_label = cw.label(self,self.left, text="Logged in as\n"+cg.user, width=16,side="bottom",pady=8)
 
         self.page_message()
         self.page_post()
@@ -88,11 +85,8 @@ class client():
         self.posts = dict()
         self.post_btn = []
         self.contact_list = []
-
-        self.settings = chat_settings.settings()
         
         self.get_contacts()
-        self.theming()
 
         self.check_min = 0
         self.check_max = 0
@@ -139,6 +133,7 @@ class client():
                              expand=1,
                              borderwidth=0
                              )
+        self.label.disable()
 
         self.scrollbar = cw.scroll(self,self.text_frame,
                                       command=self.label.widget.yview,
@@ -200,9 +195,9 @@ class client():
         self.frame_contacts = cw.canvas_window(self,self.frame_add)
 
     def request(self,cmd="",txt=""):
-        msg = cmd + "\n" + self.userid + "\n" + self.password + "\n" + txt
+        msg = cmd + "\n" + cg.userid + "\n" + cg.password + "\n" + txt
         msg = msg.strip()
-        ch, resp = self.settings.request(msg)
+        ch, resp = settings.request(msg)
 
         if not ch:
             self.error.set(resp)
@@ -238,7 +233,6 @@ class client():
         for i in reversed(range(self.post_min,self.post_max+1)):
             self.post_btn.append( postbtn(i,self))
 
-        self.theming()
         self.win.widget.after(100,self.posts_frame.post_region)
 
             
@@ -252,9 +246,10 @@ class client():
                     msg += j+"\n"
                 msg = msg.strip()
                 user = self.get_username(get[0])
+                date = settings.time_format(get[1])
                 md = {
                         "user" : user,
-                        "date" : get[1],
+                        "date" : date,
                         "msg" : msg
                     }
                 self.posts[str(i)] = md
@@ -292,16 +287,16 @@ class client():
 
         else: return'''
 
-        #print(self.msgs)
-
+        self.label.enable()
         num = 0
         self.label.erase()
         for i in range(msg_min,msg_max+1):
             msg = self.msgs[str(i)]
 
             self.label.insert("\n"+msg["user"]+"     ","User")
-            self.label.insert(msg["date"][:16]+"\n","Date")
+            self.label.insert(msg["date"]+"\n","Date")
             self.label.insert(msg["msg"]+"\n")
+        self.label.disable()
 
     def chkmsg(self,msg_min,msg_max):
         with open(cachedir+"main.txt","a") as file:
@@ -320,9 +315,10 @@ class client():
                         msg += j+"\n"
                     msg = msg.strip()
                     user = self.get_username(get[0])
+                    date = settings.time_format(get[1])
                     md = {
                         "user" : user,
-                        "date" : get[1],
+                        "date" : date,
                         "msg" : msg
                     }
                     self.msgs[sect] = md
@@ -348,7 +344,6 @@ class client():
                     cw.radio(self,self.contacts,padiy=4,variable=self.friend,text=name,value=i,width=16,command=self.switch)
                     contact_btn(i,self)
                     self.contact_list.append(name)
-            self.theming()
             self.win.widget.after(100,self.frame_contacts.post_region)
 
     def get_username(self,user):
@@ -359,33 +354,6 @@ class client():
 
     def guiset(self):
         csg.guiset(self,self.win)
-
-    def on_exit(self):
-        try:
-            self.settings.win.destroy()
-        except:
-            pass
-
-        self.win.destroy()
-        self.master.win.destroy()
-
-    def theming(self):
-        #Function used to theme local settings window
-        #Update selected theme name
-        try:
-            with open(save,"r") as file:
-                lines = file.readlines()
-                self.theme = lines[2].strip()
-                self.accent = lines[3].strip()
-                self.apply_theme = int(lines[4].strip())
-        except:
-            self.theme = ""
-            self.accent = ""
-            self.apply_theme = 1
-
-        if self.apply_theme:
-            #Get theme colours
-            cw.theming(self,self.theme,self.accent)
 
     def post_click(self):
         self.chatname = "post"+str(self.i)
@@ -423,12 +391,12 @@ class client():
             self.receive()
 
     def logout(self):
+        cg.remember = 0
+        cg.password = ""
+        cg.userid = ""
+        cg.user = ""
+        settings.save_user()
         self.win.destroy()
-        with open(save,"w") as file:
-            file.write("\n")
-            file.write("\n"+self.theme)
-            file.write("\n"+self.accent)
-            file.write("\n"+str(self.apply_theme))
         self.master.login()
 
     def add_friend(self):
@@ -458,7 +426,7 @@ class postbtn():
                 expand=1,
                 justify="left",
                 anchor="nw",
-                bg="textbox"
+                bg="bg"
             )
         self.i = i
         self.master = master
@@ -482,7 +450,7 @@ class contact_btn():
                 expand=1,
                 justify="left",
                 anchor="nw",
-                bg="textbox"
+                bg="bg"
             )
         self.i = i
         self.master = master
@@ -491,7 +459,7 @@ class contact_btn():
         self.master.friend.set(self.i)
         self.master.switch()
         
-def main(user,master,password,userid):
-    client(user,master,password,userid)
+def main(master):
+    client(master)
 
 if __name__ == "__main__": print("Please run the program through chat_main.py")
