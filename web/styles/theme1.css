@@ -1,0 +1,22 @@
+body, button, a, input, textarea, .send, 
+.topbar, .main, .userlist, .send_short {
+    background-color: #333333;
+    color: #f2f2f2;
+}
+
+.comment {
+    color: #909090;
+}
+
+aside, input, a,
+.btn_inactive, textarea {
+    background-color: #3f3f3f;
+}
+
+.btn_inactive:hover {
+    background-color: #5a5a5a;
+}
+
+.msg_background, .chatbox {
+    background-color: #1e1e1e;
+}

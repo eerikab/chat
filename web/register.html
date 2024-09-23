@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="styles/font.css" rel="stylesheet"> 
+    <link href="styles/theme1.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles/accent1.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <title>Chat login - Register</title>
+</head>
+<body>
+    <aside>
+        <button onclick="location.href='login.html';" class="btn_inactive">Login</button>
+        <br><button onclick="location.href='register.html';" class="btn_active">Register</button>
+    </aside>
+
+    <div class="main">
+        <form action="client.html" method="post">
+            <p>Welcome!</p>
+            <label for="name">Username:</label>
+            <br><input type="text" id="name" name="name">
+            <p class="comment">4-32 characters; letters, numbers, <br>dashes, periods, underscores allowed</p>
+            <label for="name">Email:</label>
+            <br><input type="email" id="email" name="email">
+            <p class="comment">Valid email format</p>
+            <label for="password">Password:</label>
+            <br><input type="password" id="password" name="password">
+            <p class="comment">8-64 charactes</p>
+            <label for="confirm">Confirm password:</label>
+            <br><input type="password" id="confirm" name="confirm">
+            <br><br><button type="submit">Sign up</button>
+        </form>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+html, body {
+    text-align: center;
+    font-family: "Montserrat";
+    font-size: 12pt;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    word-wrap: break-word;
+}
+
+aside {
+    width: 16ch;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.main {
+    margin-left: 16ch;
+    height: 100%;
+}
+
+.sidebar_main {
+    width: 20ch;
+}
+
+.checkbox {
+    margin-left: 16ch;
+}
+
+form {
+    display: inline-block;
+}
+
+input {
+    width: 30ch;
+}
+
+input[type="checkbox"] {
+    width: 20px;
+}
+
+button {
+    padding: 6px 8px;
+    border: none;
+    font-family: "Montserrat";
+    font-size: 12pt;
+    width: 13ch;
+}
+
+.btn_active, .btn_inactive {
+    width: 100%;
+}
+
+textarea {
+    font-family: "Montserrat";
+    font-size: 12pt;
+    resize: none;
+}
+
+.chatbox {
+    padding-left: 20ch;
+    padding-top: 5ch;
+    padding-bottom: 15ch;
+    text-align: left;
+}
+
+.chatbox_short {
+    padding-left: 36ch;
+    padding-top: 5ch;
+    padding-bottom: 15ch;
+    text-align: left;
+}
+
+.topbar {
+    position : fixed;
+    text-align: left;
+    margin-left: 20ch;
+    padding-left: 2ch;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 5ch;
+}
+
+.send {
+    position: fixed;
+    margin-left: 20ch;
+    width: calc(100% - 20ch);
+    bottom: 0;
+    height: 15ch;
+}
+
+.send_short {
+    position: fixed;
+    margin-left: 36ch;
+    width: calc(100% - 36ch);
+    bottom: 0;
+    height: 15ch;
+}
+
+.message {
+    width: calc(100% - 4ch);
+    height: 5ch;
+}
+
+.account {
+    width: 20ch;
+    position: fixed;
+    bottom: 0;
+}
+
+.error {
+    color: red;
+}
+
+.msg_background {
+    width: 100%;
+    height: 100%;
+}
+
+.userlist {
+    margin-left: 20ch;
+    margin-top: 5ch;
+    width: 16ch;
+    height: 100%;
+    position: fixed;
+}
+
+.pagelist {
+    width: 20ch;
+    margin-top: 5ch;
+}

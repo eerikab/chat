@@ -1,0 +1,13 @@
+.montserrat-regular {
+    font-family: "Montserrat", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+  }
+
+.montserrat-bold {
+    font-family: "Montserrat", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+  }
