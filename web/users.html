@@ -18,27 +18,36 @@
     <div class="msg_background">
         
         <div class="topbar">
-            <p><b>Messages - main</b></p>
+            <p><b>Messages - Add contacts</b></p>
+        </div>
+
+        <div class="adduser">
+            <form action="users.html" method="post">
+                <label for="name">Enter a friend's nickname to add them to a contact list</label>
+                <br><input type="text" id="name" name="name">
+                <br><br><button type="submit">Add</button>
+            </form>
+            <br><br><br><div class="bottom">Direct messages:</div>
         </div>
         
-        <div class="chatbox_short">
-            <br><b class="user">User</b>
-            <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;01 Jan 2000 00:00</span>
-            <br>Message
-        </div>
-        
-        <div class="send_short">
-            <span class="error">Error message</span><br>
-            <textarea class="message"></textarea>
-            <br><br><button class="btn_long">Send message</button><br><br>
+        <div class="userlist_box">
+            <button onclick="location.href='chat.html';" class="postbtn">
+                <b class="user">User</b> 
+                <br><br><span class="comment">Message</span>
+            </button>
+
+            <button onclick="location.href='chat.html';" class="postbtn">
+                <b class="user">User</b> 
+                <br><br><span class="comment">Message</span>
+            </button>
+
         </div>
         
         <aside class="userlist">
-            <button onclick="location.href='users.html';" class="btn_inactive">Add contacts</button>
+            <button onclick="location.href='users.html';" class="btn_active">Add contacts</button>
             <br><br>Message list<br><br>
-            <button onclick="location.href='messages.html';" class="btn_active">main</button>
+            <button onclick="location.href='messages.html';" class="btn_inactive">main</button>
             <button class="btn_inactive">User</button>
-            
         </aside>
         
     </div>

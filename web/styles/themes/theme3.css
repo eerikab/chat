@@ -1,0 +1,27 @@
+html, body, button, a, input, textarea, .send,
+.topbar, .main, .userlist, .send_short,
+.postbtn, .adduser {
+    background-color: #000960;
+    color: #f2f2f2;
+}
+
+.comment {
+    color: #909090;
+}
+
+aside, input, a,
+.btn_inactive, textarea {
+    background-color: #002078;
+}
+
+.btn_inactive:hover, .postbtn:hover {
+    background-color: #002eac;
+}
+
+.msg_background, .chatbox, .text_example {
+    background-color: #000920;
+}
+
+.error {
+    color: red;
+}

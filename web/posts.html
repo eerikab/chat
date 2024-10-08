@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="styles/font.css" rel="stylesheet"> 
-    <link href="styles/theme1.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="styles/accent1.css">
+    <link href="styles/themes/theme1.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles/accents/accent1.css">
     <link rel="stylesheet" href="styles/layout.css">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,32 +17,43 @@
 <body>
     <div class="msg_background">
         <div class="topbar">
-            <p><b>Post</b></p>
+            <p><b>Posts</b></p>
         </div>
         
         <div class="chatbox">
-            <br><b class="user">User</b>
-            <span class="comment">01 Jan 2000 00:00</span>
-            <br>Message<br>
+            <button onclick="location.href='chat.html';" class="postbtn">
+                <b class="user">User</b> 
+                <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;01 Jan 2000 00:00, 0 replies</span>
+                <br><br>Post
+                <br><span class="comment"></span>
+            </button>
+
+            <button onclick="location.href='chat.html';" class="postbtn">
+                <b class="user">User</b> 
+                <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;01 Jan 2000 00:00, 0 replies</span>
+                <br><br>Post
+                <br><span class="comment"></span>
+            </button>
+
         </div>
         
         <div class="send">
             <span class="error">Error message</span><br>
             <textarea class="message"></textarea>
-            <br><br><button>Send message</button><br><br>
+            <br><br><button class="btn_long">Send message</button><br><br>
         </div>
     </div>
     
     <aside class="sidebar_main">
         <p><b>Chat</b></p>
         <aside class="pagelist">
-            <br><br><br><button onclick="location.href='client.html';" class="btn_active">Posts</button>
+            <br><br><br><button onclick="location.href='posts.html';" class="btn_active">Posts</button>
             <br><button onclick="location.href='messages.html';" class="btn_inactive">Messages</button>
         </aside>
         <div class="account">
             <p>Logged in as<br>User</p>
             <button onclick="location.href='register.html';">Log out</button>
-            <br><br><button onclick="location.href='register.html';">Settings</button><br><br>
+            <br><br><button onclick="location.href='appearance.html';">Settings</button><br><br>
         </div>
     </aside>
 </body>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="styles/font.css" rel="stylesheet"> 
+    <link href="styles/themes/theme1.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="styles/accents/accent1.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <title>Chat settings - Account</title>
+</head>
+<body>
+    <aside>
+        <button onclick="location.href='appearance.html';" class="btn_inactive">Appearance</button>
+        <br><button onclick="location.href='account.html';" class="btn_active">Account</button>
+        <br><button onclick="location.href='about.html';" class="btn_inactive">About</button>
+        <div class="list_bottom">
+            <button onclick="location.href='posts.html';">Close</button><br><br>
+        </div>
+    </aside>
+
+    <div class="main">
+        <form action="account.html" method="post">
+            <p>User ID: XXXXXXXXXXXXXXXX</p>
+            <p>Username: username</p>
+            <input type="checkbox" id="remember" name="remember" checked>
+            <label for="apply">Remember me</label>
+            <br><br><button class="btn_long">Change username</button>
+            <br><br><button class="btn_long">Change password</button>
+            <br><br><button class="btn_long">Change email</button>
+            
+            <br><br><label for="new">Change password:</label>
+            <br><input type="text" id="new" name="new">
+            <br><br><label for="new">Confirm new password:</label>
+            <br><input type="text" id="new" name="new">
+            <br><br><label for="new">Enter current password to confirm changes:</label>
+            <br><input type="text" id="new" name="new">
+            <br><br><br><button>Save changes</button>
+            
+        </form>
+        <br><br>
+            
+    </div>
+
+</body>
+</html>

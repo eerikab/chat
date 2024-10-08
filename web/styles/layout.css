@@ -1,11 +1,17 @@
 html, body {
     text-align: center;
-    font-family: "Montserrat";
-    font-size: 12pt;
     margin: 0;
     width: 100%;
     height: 100%;
     word-wrap: break-word;
+    max-width: 100%;
+    overflow-x: hidden;
+    min-width: 100ch;
+}
+
+body, button, textarea {
+    font-family: "Montserrat";
+    font-size: 12pt;
 }
 
 aside {
@@ -18,7 +24,6 @@ aside {
 
 .main {
     margin-left: 16ch;
-    height: 100%;
 }
 
 .sidebar_main {
@@ -44,9 +49,11 @@ input[type="checkbox"] {
 button {
     padding: 6px 8px;
     border: none;
-    font-family: "Montserrat";
-    font-size: 12pt;
-    width: 13ch;
+    width: 12ch;
+}
+
+.btn_long {
+    width: 16ch;
 }
 
 .btn_active, .btn_inactive {
@@ -54,8 +61,6 @@ button {
 }
 
 textarea {
-    font-family: "Montserrat";
-    font-size: 12pt;
     resize: none;
 }
 
@@ -70,6 +75,17 @@ textarea {
     padding-left: 36ch;
     padding-top: 5ch;
     padding-bottom: 15ch;
+    text-align: left;
+}
+
+.userlist_box {
+    padding-left: 36ch;
+    padding-top: 20ch;
+    text-align: left;
+}
+
+.text_example {
+    width: 40ch;
     text-align: left;
 }
 
@@ -100,6 +116,14 @@ textarea {
     height: 15ch;
 }
 
+.adduser {
+    position: fixed;
+    margin-left: 36ch;
+    margin-top: 5ch;
+    width: calc(100% - 36ch);
+    height: 15ch;
+}
+
 .message {
     width: calc(100% - 4ch);
     height: 5ch;
@@ -111,8 +135,10 @@ textarea {
     bottom: 0;
 }
 
-.error {
-    color: red;
+.list_bottom {
+    width: 16ch;
+    position: fixed;
+    bottom: 0;
 }
 
 .msg_background {
@@ -131,4 +157,22 @@ textarea {
 .pagelist {
     width: 20ch;
     margin-top: 5ch;
+}
+
+.postbtn {
+    text-align: left;
+    margin-top: 1ch;
+    margin-left: 1ch;
+    width: calc(100% - 2ch);
+    word-wrap: normal;
+}
+
+.radiolist {
+    width: 20ch;
+}
+
+.bottom {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
 }

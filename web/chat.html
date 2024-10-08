@@ -12,42 +12,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     
-    <title>Chat - main</title>
+    <title>Chat</title>
 </head>
 <body>
     <div class="msg_background">
-        
         <div class="topbar">
-            <p><b>Messages - main</b></p>
+            <p><b>Post</b></p>
         </div>
         
-        <div class="chatbox_short">
+        <div class="chatbox">
             <br><b class="user">User</b>
             <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;01 Jan 2000 00:00</span>
-            <br>Message
+            <br>Message<br>
         </div>
         
-        <div class="send_short">
+        <div class="send">
             <span class="error">Error message</span><br>
             <textarea class="message"></textarea>
             <br><br><button class="btn_long">Send message</button><br><br>
         </div>
-        
-        <aside class="userlist">
-            <button onclick="location.href='users.html';" class="btn_inactive">Add contacts</button>
-            <br><br>Message list<br><br>
-            <button onclick="location.href='messages.html';" class="btn_active">main</button>
-            <button class="btn_inactive">User</button>
-            
-        </aside>
-        
     </div>
     
     <aside class="sidebar_main">
         <p><b>Chat</b></p>
         <aside class="pagelist">
-            <br><br><br><button onclick="location.href='posts.html';" class="btn_inactive">Posts</button>
-            <br><button onclick="location.href='messages.html';" class="btn_active">Messages</button>
+            <br><br><br><button onclick="location.href='posts.html';" class="btn_active">Posts</button>
+            <br><button onclick="location.href='messages.html';" class="btn_inactive">Messages</button>
         </aside>
         <div class="account">
             <p>Logged in as<br>User</p>

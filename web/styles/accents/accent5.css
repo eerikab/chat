@@ -1,0 +1,15 @@
+button, .btn_active {
+    background-color: #b400f0;
+}
+
+button:hover, .btn_active:hover {
+    background-color: #c040ff;
+}
+
+b {
+    color: #bc00fa;
+}
+
+.user {
+    color: #ff00ff;
+}

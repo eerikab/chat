@@ -1,5 +1,6 @@
-body, button, a, input, textarea, .send, 
-.topbar, .main, .userlist, .send_short {
+html, body, button, a, input, textarea, .send,
+.topbar, .main, .userlist, .send_short,
+.postbtn, .adduser {
     background-color: #333333;
     color: #f2f2f2;
 }
@@ -13,10 +14,14 @@ aside, input, a,
     background-color: #3f3f3f;
 }
 
-.btn_inactive:hover {
+.btn_inactive:hover, .postbtn:hover {
     background-color: #5a5a5a;
 }
 
-.msg_background, .chatbox {
+.msg_background, .chatbox, .text_example {
     background-color: #1e1e1e;
+}
+
+.error {
+    color: red;
 }
