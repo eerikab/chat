@@ -24,17 +24,18 @@
     </aside>
 
     <div class="main">
-        <form action="chat.html" method="post">
+        <form id="logform" action="posts.html" method="post">
             <p>Welcome!</p>
             <label for="name">Username:</label>
-            <br><input type="text" id="name" name="name">
+            <br><input type="text" id="name" name="name" required>
             <br><br><label for="password">Password:</label>
-            <br><input type="password" id="password" name="password">
+            <br><input type="password" id="password" name="password" required>
             <br><br><input type="checkbox" id="remember" name="remember">
             <label for="remember">Remember me</label>
             <br><br><button type="submit">Login</button>
         </form>
     </div>
 
+    <script src="scripts/script.js"></script>
 </body>
 </html>
