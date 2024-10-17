@@ -9,7 +9,7 @@ html, body {
     min-width: 100ch;
 }
 
-body, button, textarea {
+body, button, textarea, input {
     font-family: "Montserrat";
     font-size: 12pt;
 }
@@ -39,7 +39,7 @@ form {
 }
 
 input {
-    width: 30ch;
+    width: 25ch;
 }
 
 input[type="checkbox"] {
