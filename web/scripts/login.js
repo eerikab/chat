@@ -1,8 +1,8 @@
 //Scripting for Login and Register pages
 
-let username = "";
-let userID = 0;
-let password = "";
+//Clear user credentials from storage
+sessionStorage.removeItem("username");
+sessionStorage.removeItem("password");
 
 function login()
 {
@@ -55,15 +55,15 @@ const log_form = document.getElementById("logform");
 if (reg_form)
 {
     reg_form.addEventListener("submit",(event) => {
-        event.preventDefault();
         register();
+        event.preventDefault();
     })
 }
 
 if (log_form)
 {    
     log_form.addEventListener("submit",(event) => {
-        event.preventDefault();
         login();
+        event.preventDefault();
     })
 }

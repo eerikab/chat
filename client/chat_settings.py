@@ -9,6 +9,7 @@ import re
 import socket
 import chat_global as cg
 import datetime
+import json
 
 def reset():
     #Reset all themes
@@ -176,8 +177,7 @@ def save_user():
         file.write("\n"+str(cg.apply_theme))
 
 def time_format(time_str=""):
-    #2024-03-26 18:43
-    #https://stackoverflow.com/questions/68664644/how-can-i-convert-from-utc-time-to-local-time-in-python
+    #2024-03-26 18:43 -> 26 Mar 2024 18:43
     if time_str == "":
         time_str = str(datetime.datetime.now(datetime.timezone.utc))
 
@@ -194,6 +194,18 @@ def time_format(time_str=""):
         return day+" "+cg.months[int(month)]+" "+year+" "+hour+":"+minute
     except:
         return day+"/"+month+"/"+year+" "+hour+":"+minute
+    
+def ini_to_json():
+    #Converts theming configuration from INI to JSON
+    config = configparser.ConfigParser()
+    config.read(cg.directory+"/config/chat_themes.ini")
+    config_dict = dict()
+    for i in config.sections():
+        config_dict[i] = dict(config.items(i))
+    print(config_dict)
+    config_json = json.dumps(config_dict,indent=4)
+    with open(cg.directory+"/config/chat_themes.json","w") as file:
+        file.write(config_json)
     
 
 #Init

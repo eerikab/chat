@@ -16,8 +16,9 @@ apply_theme = 1 #Whether to apply theming
 remember = 1 #Remember username and password hash for next login
 
 #File management
-file_theme = os.path.dirname(__file__)+"/config/chat_themes.ini"
-file_settings = os.path.dirname(__file__)+"/config/chat_settings.txt"
+directory = os.path.dirname(__file__)
+file_theme = directory+"/config/chat_themes.ini"
+file_settings = directory+"/config/chat_settings.txt"
 
 #Locale
 months = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
