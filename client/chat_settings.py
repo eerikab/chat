@@ -6,10 +6,11 @@ import os
 import configparser
 from hashlib import sha256
 import re
-import socket
 import chat_global as cg
 import datetime
 import json
+import asyncio
+from websockets.client import connect
 
 def reset():
     #Reset all themes
@@ -103,21 +104,19 @@ def theming():
             accentls = i
     return {**themels,**accentls} 
 
+async def send(command):
+    #Communicate through websocket
+    async with connect("ws://localhost:9000") as websocket:
+        await websocket.send(command)
+        return await websocket.recv()
+
 def request(command):
     try:
-        c = socket.socket()
-        c.connect(("localhost",9999))
-
-        command = command.strip()
-        #print("request",command)
-        c.send(bytes(command,"utf-8"))
-        resp = c.recv(1024).decode().strip()
-        #print("resp",resp)
+        resp = asyncio.run(send(command))
 
         if resp[:5] == "Error" or resp[:12] == "Server error":
             return False, resp
-
-        c.close()
+        
         return True, resp
 
     except Exception as e:

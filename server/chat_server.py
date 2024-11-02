@@ -1,7 +1,7 @@
 '''Server code, stores data and handles communication
 Keep separate from the client'''
 
-import socket
+#import socketserver
 import os
 import datetime
 import hashlib
@@ -9,6 +9,10 @@ import configparser
 import random
 import re
 import sys
+import asyncio
+from websockets.server import serve
+
+HOST, PORT = "localhost", 9000
 
 #Versions
 version = "0.0.0"
@@ -31,12 +35,6 @@ os.makedirs(dir_group, exist_ok=True)
 dir_general = dir_chat + "main.ini"
 dir_user += "users.ini"
 
-#Create networking socket
-s = socket.socket()
-print("Starting up server. Press Ctrl+C to close")
-s.bind(("localhost",9999))
-print("Socket created\nReading user list")
-
 #Read user data
 config = configparser.ConfigParser()
 config.read(dir_user)
@@ -52,31 +50,20 @@ while True:
     try:
         config = configparser.ConfigParser()
         path = dir_post+"post"+str(posts)+".ini"
-        print(path)
         config.read(path)
         if config.has_section("msg0"):
             posts += 1
         else:
-            print("Else")
             break
     except Exception as e:
-        print("Exception",e)
         break
 
 print(str(posts) + " posts found")
 
-print("Init done")
-s.listen(3)
-print("Waiting for connections")
 
+#Functions
 def time():
     return str(datetime.datetime.now(datetime.timezone.utc))[:22]
-
-def respond(txt):
-    if len(txt) > 1024:
-        txt = "Server error: response too long"
-    print("Response", txt)
-    c.send(bytes(txt,"utf-8"))
 
 def hashing(txt):
     return hashlib.sha256(bytes(txt,"utf-8")).hexdigest()
@@ -127,7 +114,7 @@ def get_directory(file="",userid=""):
     else:
         #Misc stuff defaults to the parent directory
         return dir_chat + file + ".ini"
-    
+
 def update_users():
     config = configparser.ConfigParser()
     for i in users:
@@ -135,12 +122,11 @@ def update_users():
     with open(dir_user,"w") as file:
         config.write(file)
 
-
+#Responses
 def commands(get):
     cmd = get[0]
     global posts
 
-    #Responses
     if cmd == "message":
         user = get[1]
         msg = ""
@@ -399,22 +385,56 @@ def commands(get):
     
     elif cmd == "version":
         return version
+    
+    print(cmd)
 
-    return "Error: Invalid function"
+    return "Error: Invalid function " + str(cmd)
 
-while True:
+'''#TCP socket server - old
+class tcp_handler(socketserver.BaseRequestHandler)  :
     #Get client request
-    c, addr = s.accept()
-    try:
-        get = c.recv(1024).decode().split("\n")
-        print("Connected with ", addr, time(), get)
-        resp = commands(get)
-        respond(resp)
+    def respond(self,txt):
+        if len(txt) > 1024:
+            txt = "Server error: response too long"
+        print("Response", txt, "\n")
+        self.request.sendall(bytes(txt,"utf-8"))
 
-    except Exception as e:
+    def handle(self):
         try:
-            respond("Server error: "+str(e))
+            print(self.request)
+            get = self.request.recv(1024).decode().split("\n")
+            print("Connected with ", self.client_address, time(), get)
+            resp = commands(get)
+            self.respond(resp)
+
         except Exception as e:
-            print("Failed connection with client")
-            
-    c.close()
+            try:
+                self.respond("Server error: "+str(e))
+            except Exception as e:
+                print("Failed connection with client")'''
+
+#Create networking socket
+print("Starting up server. Press Ctrl+C to close")
+
+'''with socketserver.TCPServer((HOST,PORT),tcp_handler) as server:  
+    print("Socket created\nWaiting for connections")
+    server.serve_forever()
+'''
+
+async def handle(websocket):
+    async for message in websocket:
+        get = message.split("\n")
+        print("Connected",get)
+        try:
+            resp = commands(get)
+        except Exception as e:
+            resp = "Server error: " + str(e)
+        print("Response",resp)
+        await websocket.send(resp)
+
+async def main():
+    async with serve(handle, HOST, PORT):
+        print("WebSocket created\nWaiting for connections")
+        await asyncio.get_running_loop().create_future()  # run forever
+
+asyncio.run(main())
