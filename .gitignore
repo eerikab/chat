@@ -1,9 +1,15 @@
 #ignore text files
 *.txt
+
 #cache
 __pycache__
 cache
+
 #server data
 data
+
 #misc testing
 test.py
+
+#unrelated system files
+.directory

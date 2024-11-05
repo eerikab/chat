@@ -23,7 +23,7 @@
     </aside>
 
     <div class="main">
-        <form id="logform" action="posts.html" method="post">
+        <div id="logform" method="post">
             <p>Welcome!</p>
             <label for="name">Username:</label>
             <br><input type="text" id="name" name="name" required>
@@ -31,11 +31,12 @@
             <br><input type="password" id="password" name="password" required>
             <br><br><input type="checkbox" id="remember" name="remember">
             <label for="remember">Remember me</label>
-            <br><br><button type="submit">Login</button>
-        </form>
+            <br><span class="error">&nbsp;</span><br>
+            <br><button type="submit" onclick="submit_login()">Login</button>
+        </div>
     </div>
 
-    <script src="scripts/login.js"></script>
     <script src="scripts/functions.js"></script>
+    <script src="scripts/login.js"></script>
 </body>
 </html>

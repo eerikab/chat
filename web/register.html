@@ -23,12 +23,12 @@
     </aside>
 
     <div class="main">
-        <form id="regform">
+        <div id="regform">
             <p>Welcome!</p>
             <label for="name">Username:</label>
             <br><input type="text" id="name" name="name" minlength="4" maxlength="32" required pattern="[\w\-_\.]*">
             <p class="comment">4-32 characters; letters, numbers, <br>dashes, periods, underscores allowed</p>
-            <label for="name">Email:</label>
+            <label for="email">Email:</label>
             <br><input type="email" id="email" name="email" required>
             <p class="comment">Valid email format</p>
             <label for="password">Password:</label>
@@ -36,11 +36,12 @@
             <p class="comment">8-64 charactes</p>
             <label for="confirm">Confirm password:</label>
             <br><input type="password" id="confirm" name="confirm" required>
-            <br><br><button type="submit">Sign up</button>
-        </form>
+            <br><span class="error">&nbsp;</span><br>
+            <br><button type="submit" onclick="submit_register()">Sign up</button>
+        </div>
     </div>
 
-    <script src="scripts/login.js"></script>
     <script src="scripts/functions.js"></script>
+    <script src="scripts/login.js"></script>
 </body>
 </html>
