@@ -89,12 +89,14 @@ async function hashing(text)
 async function hash_password(username,password)
 {
     pass_txt = "[user]"+username+"[pass]"+password;
-    return await hashing(pass_txt);
+    pass_hash = await hashing(pass_txt);
 }
 
-function request_user(cmd,txt)
+function request_user(cmd,txt,func)
 {
-    
+    //Server request after user has logged in, includes authentication
+    var msg = cmd+"\n"+userid+"\n"+pass_hash+"\n"+txt;
+    request_raw(msg,func)
 }
 
 function error_set(txt)

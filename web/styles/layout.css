@@ -5,8 +5,6 @@ html, body {
     height: 100%;
     word-wrap: break-word;
     max-width: 100%;
-    overflow-x: hidden;
-    min-width: 100ch;
 }
 
 body, button, textarea, input {
@@ -64,7 +62,7 @@ textarea {
     resize: none;
 }
 
-.chatbox {
+.chatbox, .postbox {
     padding-left: 20ch;
     padding-top: 5ch;
     padding-bottom: 15ch;
@@ -164,7 +162,8 @@ textarea {
     margin-top: 1ch;
     margin-left: 1ch;
     width: calc(100% - 2ch);
-    word-wrap: normal;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .radiolist {

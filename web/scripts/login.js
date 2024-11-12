@@ -54,8 +54,8 @@ function submit_login()
     }
 
     //Hash password and submit data
-    hash_password(username,password).then(function(hash){
-        request_raw("login\n"+username+"\n"+hash,login);
+    hash_password(username,password).then(function(){
+        request_raw("login\n"+username+"\n"+pass_hash,login);
     })
 }
 
@@ -101,7 +101,7 @@ function submit_register()
     }
 
     //Hash sensitive data and submit user
-    hash_password(username,password).then(function(pass_hash){
+    hash_password(username,password).then(function(){
         hashing(email).then(function(email_hash){
         request_raw("register\n"+username+"\n"+pass_hash+"\n"+email_hash,login);
     })});

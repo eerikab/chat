@@ -19,7 +19,7 @@
             <p><b>Posts</b></p>
         </div>
         
-        <div class="chatbox">
+        <div class="postbox">
             <button onclick="location.href='chat.html';" class="postbtn">
                 <b class="user">User</b> 
                 <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;01 Jan 2000 00:00, 0 replies</span>
@@ -50,12 +50,14 @@
             <br><button onclick="location.href='messages.html';" class="btn_inactive">Messages</button>
         </aside>
         <div class="account">
-            <p>Logged in as<br>User</p>
-            <button onclick="location.href='login.html';">Log out</button>
+            <br>Logged in as
+            <br><span id="userdisplay">[user]</span>
+            <br><br><button onclick="location.href='login.html';">Log out</button>
             <br><br><button onclick="location.href='appearance.html';">Settings</button><br><br>
         </div>
     </aside>
     
     <script src="scripts/functions.js"></script>
+    <script src="scripts/client.js"></script>
 </body>
 </html>

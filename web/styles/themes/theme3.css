@@ -18,7 +18,8 @@ aside, input, a,
     background-color: #002eac;
 }
 
-.msg_background, .chatbox, .text_example {
+.msg_background, .chatbox, .text_example, 
+.chatbox_short, .postbox {
     background-color: #000920;
 }
 
