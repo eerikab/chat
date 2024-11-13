@@ -3,13 +3,15 @@ html, body {
     margin: 0;
     width: 100%;
     height: 100%;
-    word-wrap: break-word;
-    max-width: 100%;
 }
 
 body, button, textarea, input {
     font-family: "Montserrat";
     font-size: 12pt;
+}
+
+div {
+    background: local;
 }
 
 aside {
@@ -22,6 +24,7 @@ aside {
 
 .main {
     margin-left: 16ch;
+    overflow: hidden;
 }
 
 .sidebar_main {
@@ -42,6 +45,11 @@ input {
 
 input[type="checkbox"] {
     width: 20px;
+}
+
+button, .account, .postbtn {
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 button {
@@ -67,6 +75,7 @@ textarea {
     padding-top: 5ch;
     padding-bottom: 15ch;
     text-align: left;
+    overflow-x: hidden;
 }
 
 .chatbox_short {
@@ -74,6 +83,7 @@ textarea {
     padding-top: 5ch;
     padding-bottom: 15ch;
     text-align: left;
+    overflow-x: hidden;
 }
 
 .userlist_box {
@@ -162,8 +172,6 @@ textarea {
     margin-top: 1ch;
     margin-left: 1ch;
     width: calc(100% - 2ch);
-    overflow: hidden;
-    white-space: nowrap;
 }
 
 .radiolist {

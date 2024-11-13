@@ -9,7 +9,7 @@ html, body, button, a, input, textarea, .send,
     color: #909090;
 }
 
-aside, input, a,
+aside, input, a, .account,
 .btn_inactive, textarea {
     background-color: #002078;
 }

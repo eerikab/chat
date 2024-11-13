@@ -16,12 +16,11 @@ let users = {};
 let get_id = "";
 let users_raw = [];
 let posts = {};
-let func_to;
 
 function display_user()
 {
     const userfield = document.getElementById("userdisplay");
-    userfield.textContent = username;
+    userfield.textContent = username
 }
 
 function receive_start()
