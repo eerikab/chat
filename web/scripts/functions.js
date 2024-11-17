@@ -5,6 +5,8 @@ var username;
 var password;
 var pass_hash;
 var userid;
+var room;
+var friend;
 
 //import {Server} from "socket.io";
 //var net = require("net");
@@ -17,10 +19,18 @@ const error = document.querySelector(".error");
 
 function get_userdata()
 {
-    //Get user credentials
+    //Get user credentials from sessionstorage
     username = sessionStorage.getItem("username");
     userid = sessionStorage.getItem("userid");
     pass_hash = sessionStorage.getItem("password");
+
+    room = sessionStorage.getItem("room");
+    friend = sessionStorage.getItem("friend");
+
+    if (!room)
+        room = "main";
+    if (!friend)
+        friend = "main";
 }
 
 function request_raw(text,func)

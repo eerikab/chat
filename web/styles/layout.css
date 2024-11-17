@@ -47,7 +47,7 @@ input[type="checkbox"] {
     width: 20px;
 }
 
-button, .account, .postbtn {
+button, .account, .postbtn, .adduser {
     white-space: nowrap;
     overflow: hidden;
 }
