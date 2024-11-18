@@ -3,7 +3,7 @@
 const chatbox_short = document.querySelector(".chatbox_short");
 const chatbox = document.querySelector(".chatbox");
 const postbox = document.querySelector(".postbox");
-const userlist = document.querySelector(".userlist");
+const userlist = document.querySelector(".contactlist");
 const userbox = document.querySelector(".userlist_box");
 let msg_max = -1;
 let msg_min = -1;
@@ -25,6 +25,8 @@ class postbtn {
     constructor(num)
     {
         //this.num = num;
+
+        
 
         this.btn = document.createElement("button");
         this.btn.classList.add("postbtn");
@@ -143,6 +145,20 @@ function display_user()
     userfield.textContent = username
 }
 
+function reset()
+{
+    msg_max = -1;
+    msg_min = -1;
+    temp_max = -1;
+    temp_min = -1;
+    post_max = -1;
+    post_min = -1;
+    num = 0;
+    msgs = {};
+    posts = {};
+    phase = "contacts";
+}
+
 function receive_start()
 {
     //Find correct chatbox node
@@ -156,10 +172,18 @@ function receive_start()
     else if (userbox)
         chat = userbox;
 
+    reset();
 
     //Clear textbox
     while(chat.firstChild)
         chat.removeChild(chat.lastChild);
+
+    if (userlist)
+    {
+        while(userlist.firstChild)
+            userlist.removeChild(userlist.lastChild);
+    }
+        
 
     //Set room on privamte messages
     if (userlist)
@@ -186,6 +210,7 @@ function receive_num(result)
     request_user("get",room + "\nmsg" + String(temp_max),receive_msg);
     num -= 1;
     phase = "messages";
+    messagebox.value = "";
 }
 
 function post_num(result)
@@ -284,12 +309,12 @@ function display_messages()
 function display_posts()
 {
     //Write out messages to chatbox
-    var num = post_min;
+    var num = post_max;
     console.log(posts);
-    while (num <= post_max)
+    while (num >= post_min)
     {
         new postbtn(num);
-        num += 1;
+        num -= 1;
     }
     linebreak(postbox);
     linebreak(postbox);
@@ -394,6 +419,55 @@ function display_friends()
         request_user("postnum","",post_num);
     else
         request_user("num",room,receive_num);
+}
+
+const send_msg_button = document.getElementById("send_msg");
+const send_post_button = document.getElementById("send_post");
+const send_user_button = document.getElementById("send_user");
+
+const messagebox = document.querySelector(".message");
+const friend_input = document.getElementById("name");
+
+function send_msg()
+{
+    var message = messagebox.value;
+    if (message.length < 1)
+        return;
+
+    request_user("message",room+"\n"+message,receive_start);
+}
+    
+function send_post()
+{
+    var message = messagebox.value;
+    if (message.length < 1)
+        return;
+
+    request_user("post",message,receive_start);
+}
+
+function send_user()
+{
+    var message = friend_input.value;
+    if (message.length < 1)
+        return;
+
+    request_user("add_contact",room+"\n"+message,receive_start);
+}
+
+if (send_msg_button)
+{
+    send_msg_button.addEventListener("click",send_msg);
+}
+
+if (send_post_button)
+{
+    send_post_button.addEventListener("click",send_post);
+}
+
+if (send_user_button)
+{
+    send_user_button.addEventListener("click",send_user);
 }
 
 display_user();

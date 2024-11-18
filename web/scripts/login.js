@@ -4,6 +4,8 @@
 sessionStorage.removeItem("username");
 sessionStorage.removeItem("userid");
 sessionStorage.removeItem("password");
+sessionStorage.removeItem("room");
+sessionStorage.removeItem("friend");
 
 username = "";
 password = "";

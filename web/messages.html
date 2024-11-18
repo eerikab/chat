@@ -28,14 +28,14 @@
         
         <div class="send_short">
             <span class="error">Error message</span><br>
-            <textarea class="message"></textarea>
-            <br><br><button class="btn_long">Send message</button><br><br>
+            <textarea class="message" maxlength="500"></textarea>
+            <br><br><button id="send_msg" class="btn_long">Send message</button><br><br>
         </div>
         
         <aside class="userlist">
             <button onclick="location.href='users.html';" class="btn_inactive">Add contacts</button>
             <br><br>Message list<br><br>
-            
+            <div class="contactlist"></div>
         </aside>
         
     </div>
