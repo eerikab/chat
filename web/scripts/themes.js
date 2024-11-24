@@ -8,7 +8,7 @@ const div_accent = document.getElementById("accent");
 
 const check_apply = document.getElementById("apply");
 
-var apply = parseInt(sessionStorage.getItem("apply"));
+var apply = parseInt(localStorage.getItem("apply"));
 
 if (apply === 1)
 check_apply.checked = true;
@@ -23,7 +23,7 @@ class toggle {
         this.mode = mode; //"theme" or "accent"
 
         this.button = document.createElement("button");
-        if (sessionStorage.getItem(this.mode) === this.num.toString())
+        if (localStorage.getItem(this.mode) === this.num.toString())
             this.button.classList.add("btn_active");
         else
             this.button.classList.add("btn_inactive");
@@ -47,7 +47,7 @@ class toggle {
     onclick()
     {
         console.log(this.num,this.mode);
-        sessionStorage.setItem(this.mode,this.num.toString());
+        localStorage.setItem(this.mode,this.num.toString());
         location.reload()
     }
 
@@ -71,7 +71,7 @@ while (i < accents.length)
 function switch_apply()
 {
     apply = 1-apply;
-    sessionStorage.setItem("apply" ,apply.toString())
+    localStorage.setItem("apply" ,apply.toString())
     location.reload()
 }
 

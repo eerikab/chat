@@ -4,14 +4,14 @@ const head = document.getElementsByTagName('head')[0];
 
 //Get saved theming data
 //localStorage seems to not work between file:// pages
-let theme = parseInt(sessionStorage.getItem("theme")); 
-let accent = parseInt(sessionStorage.getItem("accent"));
-var apply = sessionStorage.getItem("apply");
+let theme = parseInt(localStorage.getItem("theme")); 
+let accent = parseInt(localStorage.getItem("accent"));
+var apply = localStorage.getItem("apply");
 
 if (apply == null)
 {
     apply = 1;
-    sessionStorage.setItem("apply",apply.toString());
+    localStorage.setItem("apply",apply.toString());
 }
 else
 {
@@ -21,12 +21,12 @@ else
 if (!theme)
 {
     theme = 1;
-    sessionStorage.setItem("theme",theme.toString());
+    localStorage.setItem("theme",theme.toString());
 }
 if (!accent)
 {
     accent = 1;
-    sessionStorage.setItem("accent",accent.toString());
+    localStorage.setItem("accent",accent.toString());
 }
 
 if (apply)

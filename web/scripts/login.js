@@ -17,17 +17,19 @@ const entry_user = document.getElementById("name");
 const entry_email = document.getElementById("email");
 const entry_password = document.getElementById("password");
 const entry_confirm = document.getElementById("confirm");
+const check_remember = document.getElementById("remember");
 
-function check_password()
+function load_data()
 {
-    //Check if passwords match
-    if (entry_password.value !== entry_confirm.value)
+    //Log in automatically if user is saved
+    let local_name = localStorage.getItem("username");
+    let local_pass = localStorage.getItem("password");
+    console.log(local_name,local_pass);
+    if (local_name && local_pass)
     {
-        entry_confirm.setCustomValidity("Passwords do not match");
-    }
-    else
-    {
-        entry_confirm.setCustomValidity("");
+        username = local_name;
+        pass_hash = local_pass;
+        request_raw("login\n"+username+"\n"+pass_hash,login);
     }
 }
 
@@ -38,6 +40,12 @@ function login(resp)
     sessionStorage.setItem("username",username);
     sessionStorage.setItem("userid",userid);
     sessionStorage.setItem("password",pass_hash);
+
+    if (check_remember.checked)
+    {
+        localStorage.setItem("username",username);
+        localStorage.setItem("password",pass_hash);
+    }
 
     location.href = "posts.html"; //Go to next page
 }
@@ -114,6 +122,7 @@ function get_version(resp)
 {
     server_version = resp;
     sessionStorage.setItem("version",resp);
+    load_data();
 }
 
 if (!server_version)

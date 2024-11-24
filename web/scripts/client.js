@@ -98,6 +98,9 @@ class contact_btn {
             }
             else
             {
+                if (!(msgs[id]))
+                    msgs[id] = {};
+
                 if ((num-1).toString() in msgs[id])
                 {
                     var data = msgs[id][(num-1).toString()];
@@ -127,7 +130,6 @@ class contact_btn {
 
     receive_num(result)
     {
-        alert("num" + result);
         var num = parseInt(result)
         if (num == 0)
         {
@@ -559,6 +561,13 @@ function load_msgs()
     let friend_raw = sessionStorage.getItem("friends");
     if (friend_raw)
         friend_list = JSON.parse(friend_raw);
+}
+
+function logout()
+{
+    localStorage.removeItem("username");
+    localStorage.removeItem("password");
+    location.href = "index.html";
 }
 
 //Functions to use on page open
