@@ -191,28 +191,40 @@ function receive_start()
                 friend_used.push(friend_list[i]);
             }*/
         }
-    }
+        //Set room on private messages
+        if (userlist)
+            room = friend;
 
+        phase = "contacts";
+
+        if (chatbox || chatbox_short)
+            window.setInterval(refresh,2000);
     
-
-    //Set room on private messages
-    if (userlist)
-        room = friend;
-
-    phase = "contacts";
-
-    if (postbox)
-        request_user("postnum","",post_num);
-    else if (userlist)
-        request_user("contacts","",get_friend);
+        if (postbox)
+            request_user("postnum","",post_num);
+        else if (userlist)
+            request_user("contacts","",get_friend);
+        else
+            request_user("num",room,receive_num);
+    }
     else
-        request_user("num",room,receive_num);
+    {
+        if (postbox)
+            request_user("postnum","",post_num);
+        else if (chatbox || chatbox_short)
+            request_user("num",room,receive_num);
+        else
+            request_user("contacts","",get_friend);
+    }
 }
 
 function receive_num(result)
 {
     //Gets the number of messages in room
     num = parseInt(result);
+    if (temp_max === num-1) {
+        return;
+    }
     temp_max = num-1;
     temp_min = num-51;
     if (!num)
@@ -223,8 +235,12 @@ function receive_num(result)
     phase = "messages";
     if (!msgs[room])
         msgs[room] = {};
+    if ("max" in msgs[room] && msgs[room]["max"] < temp_min) {
+        msgs[room]["max"] = num;
+        msgs[room]["min"] = num; 
+    }
 
-    while (num >= temp_min){
+    while (num >= temp_min) {
         if (!(String(num) in msgs[room]))
         {
             request_user("get",room + "\nmsg" + String(num),receive_msg);
@@ -351,6 +367,31 @@ function display_messages()
     }
 
     save_msgs();
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+function refresh()
+{
+    if (window.scrollY === 0 && [room] in msgs && msgs[room]["min"] > 0)
+    {
+        //Gets the number of messages in room
+        num = msgs[room]["min"];
+        temp_max = num-1;
+        temp_min = num-51;
+        if (!num)
+            return;
+        if (temp_min < 0)
+            temp_min = 0;
+        num -= 1;
+        phase = "messages";
+
+        request_user("get",room + "\nmsg" + String(num),receive_msg);
+    }
+    else
+    {
+        request_user("num",room,receive_num);
+    }
+        
 }
 
 function display_posts()
@@ -458,11 +499,12 @@ function get_friend(result)
 
 function display_friends()
 {
-    if (userbox)
-    {
-        while(userbox.firstChild)
+    if (userbox) {
+        while(userbox.lastChild)
             userbox.removeChild(userbox.lastChild);
     }
+    while(userlist.lastChild)
+        userlist.removeChild(userlist.lastChild);
 
     for (var i = 0; i < friend_list.length; i++)
     {
@@ -519,7 +561,7 @@ function send_user()
     if (message.length < 1)
         return;
 
-    request_user("add_contact",room+"\n"+message,receive_start);
+    request_user("add_contact",message,receive_start);
 }
 
 if (send_msg_button)

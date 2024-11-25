@@ -23,6 +23,8 @@ div_save.style.display = "none";
 
 entry_user.value = username;
 
+error = document.getElementById("status");
+
 function display_user()
 {
     id_label.textContent = "User ID: " + userid;

@@ -7,7 +7,7 @@ import chat_widgets as cw
 import chat_settings_gui as csg
 import chat_global as cg
 
-delay = 1000
+delay = 2000
 run = 1
 directory = os.path.dirname(__file__)
 save = directory+"/chat_settings.txt"
@@ -81,7 +81,7 @@ class client():
         self.post_min = -1
         self.post_max = -1
         self.users = dict()
-        self.users["main"] = "main"
+        self.users["main"] = "Main"
         self.posts = dict()
         self.post_btn = []
         self.contact_list = []
@@ -92,6 +92,8 @@ class client():
         self.check_max = 0
 
         self.chatname = "main"
+        self.keep_updating = False
+        self.win.widget.after(2000,self.update)
 
         '''#Load cache
         os.makedirs(directory+"/cache",exist_ok=True)
@@ -234,7 +236,6 @@ class client():
             self.post_btn.append( postbtn(i,self))
 
         self.win.widget.after(100,self.posts_frame.post_region)
-
             
     def chkpost(self,msg_min,msg_max):
         if msg_max >= 0:
@@ -260,37 +261,30 @@ class client():
                     self.post_min = i
 
     def receive(self):
-        self.msgs.clear()
         count = int(self.request("num",self.chatname))
 
-        #Get up to 50 messages at a time
-        msg_max = count-1
-        msg_min = count-51
-        if msg_min < 0:
-            msg_min = 0
-        self.chkmsg(msg_min,msg_max)
-
-        '''if count != self.msg_max+1:
+        if count != self.msg_max+1:
             #Get up to 50 messages at a time
             msg_max = count-1
             msg_min = count-51
             if msg_min < 0:
                 msg_min = 0
             self.chkmsg(msg_min,msg_max)
+            delay
 
-        elif self.scrollbar.get()[0] == 0 and self.msg_min > 0:
+        elif self.scrollbar.widget.get()[0] == 0 and self.msg_min > 0:
             msg_max = self.msg_min-1
             msg_min = msg_max-51
             if msg_min < 0:
                 msg_min = 0
             self.chkmsg(msg_min,msg_max)
 
-        else: return'''
+        else: return
 
         self.label.enable()
         num = 0
         self.label.erase()
-        for i in range(msg_min,msg_max+1):
+        for i in range(self.msg_min,self.msg_max+1):
             msg = self.msgs[str(i)]
 
             self.label.insert("\n"+msg["user"]+"     ","User")
@@ -333,6 +327,11 @@ class client():
 
             config.write(file)
 
+    def update(self):
+        if self.keep_updating:
+            self.receive()
+        self.win.widget.after(delay,self.update)
+
     def get_contacts(self):
         contacts = self.request("contacts")
         if contacts != "":
@@ -363,6 +362,14 @@ class client():
     def switch(self):
         page = self.page.get()
         self.page_title.set(page)
+        self.msgs.clear()
+        
+        self.label.enable()
+        self.label.erase()
+        self.label.disable()
+
+        self.msg_min = -1
+        self.msg_max = -1
 
         if page == "Posts":
             self.post_frame.pack(fill="both",expand=1,side="right")
@@ -370,6 +377,7 @@ class client():
             self.contacts.pack_forget()
             self.frame_add.pack_forget()
             self.postrecv()
+            self.keep_updating = False
         elif page == "Messages":
             self.contacts.pack(fill="y",side="left")
             if self.friend.get() == "add contacts":
@@ -377,17 +385,20 @@ class client():
                 self.msg_frame.pack_forget()
                 self.add_error.set("")
                 self.page_title.set("Messages - Add contacts")
+                self.keep_updating = False
             else:
                 self.msg_frame.pack(fill="both",expand=1,side="right")
                 self.frame_add.pack_forget()
                 self.chatname = self.friend.get()
                 self.receive()
                 self.page_title.set("Messages - " + self.get_username(self.chatname))
+                self.keep_updating = True
             self.post_frame.pack_forget()
             self.get_contacts()
         else:
             self.msg_frame.pack(fill="both",expand=1,side="right")
             self.post_frame.pack_forget()
+            self.keep_updating = True
             self.receive()
 
     def logout(self):

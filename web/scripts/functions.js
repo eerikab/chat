@@ -15,7 +15,7 @@ const port = 9000;
 
 var server_version = sessionStorage.getItem("version");
 
-const error = document.querySelector(".error");
+let error = document.querySelector(".error");
 
 function get_userdata()
 {
