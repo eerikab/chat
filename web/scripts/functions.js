@@ -98,8 +98,8 @@ async function hashing(text)
 
 async function hash_password(username,password)
 {
-    pass_txt = "[user]"+username+"[pass]"+password;
-    pass_hash = await hashing(pass_txt);
+    let pass_txt = "[user]"+username+"[pass]"+password;
+    return await hashing(pass_txt);
 }
 
 function request_user(cmd,txt,func)
@@ -118,6 +118,11 @@ function error_set(txt)
 function error_reset()
 {
     error.textContent = "";
+}
+
+function go_back()
+{
+    location.href = sessionStorage.getItem("prevpage");
 }
 
 get_userdata();

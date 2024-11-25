@@ -19,33 +19,54 @@
         <br><button onclick="location.href='account.html';" class="btn_active">Account</button>
         <br><button onclick="location.href='about.html';" class="btn_inactive">About</button>
         <div class="list_bottom">
-            <button onclick="location.href='posts.html';">Close</button><br><br>
+            <button onclick="go_back();">Close</button><br><br>
         </div>
     </aside>
 
     <div class="main">
-        <form action="account.html" method="post">
-            <p>User ID: XXXXXXXXXXXXXXXX</p>
-            <p>Username: username</p>
-            <input type="checkbox" id="remember" name="remember" checked>
-            <label for="apply">Remember me</label>
-            <br><br><button class="btn_long">Change username</button>
-            <br><br><button class="btn_long">Change password</button>
-            <br><br><button class="btn_long">Change email</button>
-            
-            <br><br><label for="new">Change password:</label>
-            <br><input type="text" id="new" name="new">
-            <br><br><label for="new">Confirm new password:</label>
-            <br><input type="text" id="new" name="new">
-            <br><br><label for="new">Enter current password to confirm changes:</label>
-            <br><input type="text" id="new" name="new">
-            <br><br><br><button>Save changes</button>
-            
-        </form>
+        <p id="id_label">User ID:</p>
+        <p id="name_label">Username:</p>
+        <input type="checkbox" id="remember" name="remember">
+        <label for="remember">Remember me</label>
+        <br><br><button id="btn_user" class="btn_long" onclick="show_settings_user();">Change username</button>
+        <br><br><button id="btn_pass" class="btn_long" onclick="show_settings_pass();">Change password</button>
+        <br><br><button id="btn_email" class="btn_long"  onclick="show_settings_email();">Change email</button>
+
+        <div id="div_user">
+            <br><label for="new_user">Change username:</label>
+            <br><input type="text" id="new_user" name="new_user" minlength="4" maxlength="32" pattern="[\w\-_\.]*">
+            <p class="comment">4-32 characters; letters, numbers, <br>dashes, periods, underscores allowed</p>
+            <label for="current_user">Enter current password to confirm changes:</label>
+            <br><input type="password" id="current_user" name="current_user">
+        </div>
+        
+        <div id="div_pass">
+            <br><label for="new_pass">Change password:</label>
+            <br><input type="password" id="new_pass" name="new_pass" minlength="8" maxlength="64">
+            <p class="comment">8-64 charactes</p>
+            <label for="confirm">Confirm new password:</label>
+            <br><input type="password" id="confirm" name="confirm">
+            <br><br><label for="current_pass">Enter current password to confirm changes:</label>
+            <br><input type="password" id="current_pass" name="current_pass">
+        </div>
+
+        <div id="div_email">
+            <br><label for="new_email">Change email:</label>
+            <br><input type="email" id="new_email" name="new_email">
+            <p class="comment">Valid email format</p>
+            <label for="current_email">Enter current password to confirm changes:</label>
+            <br><input type="password" id="current_email" name="current_email">
+        </div>
+
+        <div id="div_save">
+            <span class="error">Error message</span>
+            <br><br><button onclick="submit();">Save changes</button>
+        </div>
         <br><br>
             
     </div>
 
     <script src="scripts/functions.js"></script>
+    <script src="scripts/account.js"></script>
 </body>
 </html>

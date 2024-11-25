@@ -18,6 +18,8 @@ let phase = "contacts";
 let first_load = true;
 let friend_used = [];
 
+sessionStorage.setItem("prevpage",location.href);
+
 //Button classes
 class postbtn {
     num;

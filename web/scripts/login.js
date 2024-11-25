@@ -13,6 +13,8 @@ pass_hash = "";
 userid = "";
 var email = "";
 
+sessionStorage.setItem("prevpage",location.href);
+
 const entry_user = document.getElementById("name");
 const entry_email = document.getElementById("email");
 const entry_password = document.getElementById("password");
@@ -64,7 +66,8 @@ function submit_login()
     }
 
     //Hash password and submit data
-    hash_password(username,password).then(function(){
+    hash_password(username,password).then(function(hash){
+        pass_hash = hash;
         request_raw("login\n"+username+"\n"+pass_hash,login);
     })
 }
@@ -111,7 +114,8 @@ function submit_register()
     }
 
     //Hash sensitive data and submit user
-    hash_password(username,password).then(function(){
+    hash_password(username,password).then(function(hash){
+        pass_hash = hash;
         hashing(email).then(function(email_hash){
         request_raw("register\n"+username+"\n"+pass_hash+"\n"+email_hash,login);
     })});
