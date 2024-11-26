@@ -17,6 +17,8 @@ var server_version = sessionStorage.getItem("version");
 
 let error = document.querySelector(".error");
 
+let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
 function get_userdata()
 {
     //Get user credentials from sessionstorage
@@ -123,6 +125,13 @@ function error_reset()
 function go_back()
 {
     location.href = sessionStorage.getItem("prevpage");
+}
+
+function time_format(time)
+{
+    let date = new Date(time + " UTC");
+    let date_str = date.getDate() + " " + months[date.getMonth()] + " " + date.getFullYear() + " " + date.getHours().toString().padStart(2,"0") + ":" + date.getMinutes().toString().padStart(2,"0");
+    return date_str;
 }
 
 get_userdata();

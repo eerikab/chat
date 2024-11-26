@@ -13,8 +13,8 @@ const entry_user = document.getElementById("new_user");
 const entry_email = document.getElementById("new_email");
 const check_remember = document.getElementById("remember");
 
-//if (!username)
-//    location.href = "index.html";
+if (!username)
+    location.href = "index.html";
 
 div_user.style.display = "none";
 div_pass.style.display = "none";

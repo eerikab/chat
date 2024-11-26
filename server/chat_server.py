@@ -424,7 +424,7 @@ print("Starting up server. Press Ctrl+C to close")
 async def handle(websocket):
     async for message in websocket:
         get = message.split("\n")
-        print("Connected",get)
+        print("\nConnected",time(),get)
         try:
             resp = commands(get)
         except Exception as e:

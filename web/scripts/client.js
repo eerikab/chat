@@ -5,6 +5,7 @@ const chatbox = document.querySelector(".chatbox");
 const postbox = document.querySelector(".postbox");
 const userlist = document.querySelector(".contactlist");
 const userbox = document.querySelector(".userlist_box");
+const title_label = document.getElementById("page_title");
 let temp_max = -1;
 let temp_min = -1;
 let num = 0;
@@ -17,8 +18,10 @@ let friend_list = [];
 let phase = "contacts";
 let first_load = true;
 let friend_used = [];
-
 sessionStorage.setItem("prevpage",location.href);
+
+if (!username)
+    location.href = "index.html";
 
 //Button classes
 class postbtn {
@@ -46,7 +49,7 @@ class postbtn {
         }
 
         //Put post content on button
-        writemsg(this.btn,msg[0], msg[1], content);
+        writemsg(this.btn,msg[0], time_format(msg[1]), content);
         postbox.appendChild(this.btn);
 
         this.btn.addEventListener("click",function(){
@@ -106,7 +109,7 @@ class contact_btn {
                 if ((num-1).toString() in msgs[id])
                 {
                     var data = msgs[id][(num-1).toString()];
-                    writemsg(btn,id,data[1],"\n"+data[2]);
+                    writemsg(btn,id,time_format(data[1]),"\n"+data[2]);
                     userbox.appendChild(btn);
                 }
                 else
@@ -196,9 +199,17 @@ function receive_start()
             room = friend;
 
         phase = "contacts";
+        
+        if (chatbox || chatbox_short) {
+            //Set page title
+            if (room.substring(0,4) == "post")
+                set_title("Post by " + users[posts[parseInt(room.substring(4,room.length))][0]]);
+            if (userlist)
+                set_title("Messages - " + users[room]);
 
-        if (chatbox || chatbox_short)
+            //Check for new messages periodically
             window.setInterval(refresh,2000);
+        }
     
         if (postbox)
             request_user("postnum","",post_num);
@@ -225,6 +236,8 @@ function receive_num(result)
     if (temp_max === num-1) {
         return;
     }
+    if (!(room in msgs))
+        msgs[room] = {};
     temp_max = num-1;
     temp_min = num-51;
     if (!num)
@@ -233,8 +246,6 @@ function receive_num(result)
         temp_min = 0;
     num -= 1;
     phase = "messages";
-    if (!msgs[room])
-        msgs[room] = {};
     if ("max" in msgs[room] && msgs[room]["max"] < temp_min) {
         msgs[room]["max"] = num;
         msgs[room]["min"] = num; 
@@ -361,7 +372,7 @@ function display_messages()
     while (num <= msgs[room]["max"])
     {
         msg = msgs[room][String(num)];
-        writemsg(chat,msg[0], msg[1], msg[2]);
+        writemsg(chat,msg[0], time_format(msg[1]), msg[2]);
         linebreak(chat)
         num += 1;
     }
@@ -612,6 +623,12 @@ function logout()
     localStorage.removeItem("username");
     localStorage.removeItem("password");
     location.href = "index.html";
+}
+
+function set_title(text)
+{
+    document.title = text;
+    title_label.textContent = text;
 }
 
 //Functions to use on page open

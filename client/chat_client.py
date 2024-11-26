@@ -21,6 +21,7 @@ class client():
         self.win = cw.window(self,"Chat","800x600",(640,480))
 
         self.master = master
+        
 
         self.page = cw.stringvar("Messages")
         self.friend = cw.stringvar("main")
@@ -37,7 +38,7 @@ class client():
 
         self.page_frame = cw.frame(self,self.right,expand=1,fill="both")
 
-        self.title = cw.label(self,self.left, text="Chat",pady=8)
+        self.title = cw.label(self,self.left, text="Chat",pady=8,bold=True,fg="selected")
         cw.label(self,self.left,pady=4)
         cw.radio(self,self.left, 
                 text="Posts", 
@@ -76,8 +77,6 @@ class client():
         self.page_add()
 
         self.msgs = dict()
-        self.msg_min = -1
-        self.msg_max = -1
         self.post_min = -1
         self.post_max = -1
         self.users = dict()
@@ -183,7 +182,7 @@ class client():
         self.contacts.pack_forget()
         cw.radio(self,self.contacts,padiy=4,variable=self.friend,text="Add contacts",value="add contacts",width=16,command=self.switch)
         cw.label(self,self.contacts,text="Message list",pady=4)
-        cw.radio(self,self.contacts,padiy=4,variable=self.friend,text="main",value="main",width=16,command=self.switch)
+        cw.radio(self,self.contacts,padiy=4,variable=self.friend,text="Main",value="main",width=16,command=self.switch)
 
     def page_add(self):
         self.frame_add = cw.frame(self,self.page_frame,side="left")
@@ -262,30 +261,37 @@ class client():
 
     def receive(self):
         count = int(self.request("num",self.chatname))
+        if self.chatname not in self.msgs:
+            self.msgs[self.chatname] = dict()
+        if "max" not in self.msgs[self.chatname]:
+            self.msgs[self.chatname]["max"] = -1
+        if "min" not in self.msgs[self.chatname]:
+            self.msgs[self.chatname]["min"] = -1
 
-        if count != self.msg_max+1:
+        if count != self.msgs[self.chatname]["max"]+1:
             #Get up to 50 messages at a time
             msg_max = count-1
             msg_min = count-51
             if msg_min < 0:
                 msg_min = 0
             self.chkmsg(msg_min,msg_max)
-            delay
 
-        elif self.scrollbar.widget.get()[0] == 0 and self.msg_min > 0:
-            msg_max = self.msg_min-1
+        elif self.scrollbar.widget.get()[0] == 0 and self.msgs[self.chatname]["min"] > 0 and not self.just_opened:
+            msg_max = self.msgs[self.chatname]["min"]-1
             msg_min = msg_max-51
             if msg_min < 0:
                 msg_min = 0
             self.chkmsg(msg_min,msg_max)
 
-        else: return
+        elif not self.just_opened or count == 0: return
+
+        self.just_opened = False
 
         self.label.enable()
         num = 0
         self.label.erase()
-        for i in range(self.msg_min,self.msg_max+1):
-            msg = self.msgs[str(i)]
+        for i in range(self.msgs[self.chatname]["min"],self.msgs[self.chatname]["max"]+1):
+            msg = self.msgs[self.chatname][str(i)]
 
             self.label.insert("\n"+msg["user"]+"     ","User")
             self.label.insert(msg["date"]+"\n","Date")
@@ -299,7 +305,7 @@ class client():
             while i >= msg_min:
                 sect = str(i)
                 try:
-                    msg = self.msgs[sect]
+                    msg = self.msgs[self.chatname][sect]
                 except Exception as e:
                     #print(str(e))
                     get = self.request("get",self.chatname +  "\nmsg" + str(i))
@@ -315,17 +321,17 @@ class client():
                         "date" : date,
                         "msg" : msg
                     }
-                    self.msgs[sect] = md
+                    self.msgs[self.chatname][sect] = md
 
-                    config["msg"+sect] = md
-                if i > self.msg_max:
-                    self.msg_max = i
-                if i < self.msg_min or self.msg_min == -1:
-                    self.msg_min = i
+                    #config["msg"+sect] = md
+                if not "max" in self.msgs[self.chatname] or i > self.msgs[self.chatname]["max"]:
+                    self.msgs[self.chatname]["max"] = i
+                if not "min" in self.msgs[self.chatname] or self.msgs[self.chatname]["min"] == -1 or i < self.msgs[self.chatname]["min"]:
+                    self.msgs[self.chatname]["min"] = i
 
                 i -= 1
 
-            config.write(file)
+            #config.write(file)
 
     def update(self):
         if self.keep_updating:
@@ -362,14 +368,12 @@ class client():
     def switch(self):
         page = self.page.get()
         self.page_title.set(page)
-        self.msgs.clear()
         
         self.label.enable()
         self.label.erase()
         self.label.disable()
 
-        self.msg_min = -1
-        self.msg_max = -1
+        self.just_opened = True
 
         if page == "Posts":
             self.post_frame.pack(fill="both",expand=1,side="right")
@@ -450,6 +454,29 @@ class postbtn():
 class contact_btn():
     def __init__(self,i,master=client) -> None:
         text = master.get_username(i)
+        
+        if i not in master.msgs:
+            master.msgs[i] = dict()
+
+        #Get and write the last message of the chat
+        num = int(master.request(cmd="num",txt=i))
+        if num == 0:
+            text += "\n\nNo messages"
+        else:
+            num -= 1
+            if str(num) not in master.msgs[i]:
+                req = master.request(cmd="get",txt=i + "\nmsg" + str(num)).split("\n")
+                msg = ""
+                for j in req[2:]:
+                    msg += j
+                
+                master.msgs[i][num] = {
+                    "user" : req[0],
+                    "date" : settings.time_format(req[1]),
+                    "msg" : msg
+                }
+            md = master.msgs[i][num]
+            text += "     " + md["date"] + "\n\n" + md["msg"]
 
         self.button = cw.button(
                 master, master.frame_contacts,

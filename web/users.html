@@ -17,7 +17,7 @@
     <div class="msg_background">
         
         <div class="topbar">
-            <p><b>Messages - Add contacts</b></p>
+            <p><b id="page_title">Messages - Add contacts</b></p>
         </div>
 
         <div class="adduser">
@@ -44,7 +44,7 @@
         </div>
         
         <aside class="userlist">
-            <button onclick="logout();" class="btn_active">Add contacts</button>
+            <button onclick="location.href='users.html';" class="btn_active">Add contacts</button>
             <br><br>Message list<br><br>
             <div class="contactlist"></div>
         </aside>
@@ -60,7 +60,7 @@
         <div class="account">
             <br>Logged in as
             <br><span id="userdisplay">[user]</span>
-            <br><br><button onclick="location.href='index.html';">Log out</button>
+            <br><br><button onclick="logout();">Log out</button>
             <br><br><button onclick="location.href='appearance.html';">Settings</button><br><br>
         </div>
     </aside>
