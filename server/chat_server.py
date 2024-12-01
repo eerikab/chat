@@ -80,7 +80,10 @@ def validate(get):
     
 def randnum():
     #Random 16 digit number in string format
-    return str(random.randrange(1_000_000_000_000_000, 9_999_999_999_999_999))
+    id = ""
+    for i in range(16):
+        id += str(random.randint(0,9))
+    return id
     
 def regex_user(user):
         reg = r"[\w .-]*"
@@ -89,10 +92,10 @@ def regex_user(user):
         else:
             return "Error: Username contains invalid characters"
         
-def user_exists(name,key="username"):
+def user_exists(name="",key="username"):
     for i in users:
         j = users[i]
-        if j[key] == name:
+        if (key == "username" and j[key].lower() == name.lower()) or j[key] == name:
             return i
     
     return ""
@@ -122,7 +125,16 @@ def update_users():
     with open(dir_user,"w") as file:
         config.write(file)
 
-#Responses
+def check_in_room(room_dict,id):
+    #Check if user has access to room
+    if "users" not in room_dict:
+        return True
+    elif room_dict["users"]["user1"] == id or room_dict["users"]["user2"] == id:
+        return True
+    else:
+        return False
+
+# RESPONSES
 def commands(get):
     cmd = get[0]
     global posts
@@ -133,8 +145,6 @@ def commands(get):
         date = time()
         post = get[3]
 
-        post = get_directory(post,user)
-
         if not validate(get):
             return "Error: Invalid credentials"
         
@@ -142,8 +152,15 @@ def commands(get):
             msg += i+"\n"
         msg = msg.strip()
 
+        if len(msg) > 500:
+            return "Error: Message has to be max 500 characters"
+
+        post = get_directory(post,user)
         config = configparser.ConfigParser()
         config.read(post)
+
+        if not check_in_room(config,get[1]):
+            return "Error: No access to room"
 
         if "users" in config:
             length = len(config)-2
@@ -174,6 +191,9 @@ def commands(get):
             msg += i+"\n"
         msg = msg.strip()
 
+        if len(msg) > 500:
+            return "Error: Message has to be max 500 characters"
+
         with open(dir_post+"post"+str(posts)+".ini","a") as file:
             config = configparser.ConfigParser()
             md = {
@@ -188,11 +208,16 @@ def commands(get):
             return "OK"
 
     elif cmd == "num":
-        post = get_directory(get[3],get[1])
         if not validate(get):
             return "Error: Invalid credentials"
+        
+        post = get_directory(get[3],get[1])
         config = configparser.ConfigParser()
         config.read(post)
+
+        if not check_in_room(config,get[1]):
+            return "Error: No access to room"
+        
         if "users" in config:
             return str(len(config)-2)
         else:
@@ -204,11 +229,16 @@ def commands(get):
         return str(posts)
 
     elif cmd == "get":
-        post = get_directory(get[3],get[1])
         if not validate(get):
             return "Error: Invalid credentials"
+
+        post = get_directory(get[3],get[1])
         config = configparser.ConfigParser()
         config.read(post)
+
+        if not check_in_room(config,get[1]):
+            return "Error: No access to room"
+
         ls = config[get[4]]
         msg = ls["user"] + "\n" + ls["date"] + "\n" + ls["msg"]
         
@@ -230,7 +260,7 @@ def commands(get):
         password = hashing(get[2])
         for i in users:
             j = users[i]
-            if user == j["username"] and password == j["password"]:
+            if (user == j["username"] or hashing(user) == j["email"]) and password == j["password"]:
                 return i
         return "Error: Invalid username or password"
 
@@ -332,6 +362,9 @@ def commands(get):
         other_id = user_exists(other_user)
         if not other_id:
             return "Error: User not found"
+        
+        if user == other_id:
+            return "Error: Cannot add yourself"
 
         chat_path = get_directory(other_id,user)
 
