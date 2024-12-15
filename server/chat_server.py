@@ -5,12 +5,13 @@ Keep separate from the client'''
 import os
 import datetime
 import hashlib
-import configparser
 import random
 import re
 import sys
 import asyncio
 from websockets.server import serve
+import sqlite3
+import traceback
 
 HOST, PORT = "localhost", 9000
 
@@ -20,133 +21,142 @@ py_version = sys.version.split()[0]
 print("Python version",sys.version)
 
 #Data directories
-dir_chat = os.path.dirname(__file__)+"/data/chat/"
-dir_user = os.path.dirname(__file__)+"/data/users/"
-os.makedirs(dir_user, exist_ok=True) #Why should the folder already existing cause an error by default?
-
-dir_post = dir_chat + "posts/" #Posts
-dir_msg = dir_chat + "msg/" #Direct messages
-dir_group = dir_chat + "group/" #Group chats
-os.makedirs(dir_post, exist_ok=True)
-os.makedirs(dir_msg, exist_ok=True)
-os.makedirs(dir_group, exist_ok=True)
-
-#Following file paths only work if there is only 1 chat room or 1 user file
-dir_general = dir_chat + "main.ini"
-dir_user += "users.ini"
-
-#Read user data
-config = configparser.ConfigParser()
-config.read(dir_user)
-users = dict()
-for i in config.sections():
-    users[i] = dict(config.items(i))
-
-print(str(len(users)) + " Users loaded\nReading messages")
-
-#Get the amount of posts
-posts = 0
-while True:
-    try:
-        config = configparser.ConfigParser()
-        path = dir_post+"post"+str(posts)+".ini"
-        config.read(path)
-        if config.has_section("msg0"):
-            posts += 1
-        else:
-            break
-    except Exception as e:
-        break
-
-print(str(posts) + " posts found")
-
+dir_data = os.path.dirname(__file__)+"/data/"
+#Why should the folder already existing cause an error by default?
+os.makedirs(dir_data, exist_ok=True) 
+dir_db = dir_data + "data.db"
 
 #Functions
 def time():
+    '''Return current time in UTC'''
     return str(datetime.datetime.now(datetime.timezone.utc))[:22]
 
 def hashing(txt):
+    '''SHA256 hash on string'''
     return hashlib.sha256(bytes(txt,"utf-8")).hexdigest()
 
-def validate(get):
-    user = get[1]
-    password = get[2]
-    config = configparser.ConfigParser()
-    config.read(dir_user)
-    if config[user]["password"] == hashing(password):
-        return True
-    else:
-        return False
-    
 def randnum():
-    #Random 16 digit number in string format
+    '''Random 16-digit number in string format'''
     id = ""
     for i in range(16):
         id += str(random.randint(0,9))
     return id
     
 def regex_user(user):
-        reg = r"[\w .-]*"
-        if re.fullmatch(reg,user):
-            return "OK"
-        else:
-            return "Error: Username contains invalid characters"
-        
-def user_exists(name="",key="username"):
-    for i in users:
-        j = users[i]
-        if (key == "username" and j[key].lower() == name.lower()) or j[key] == name:
-            return i
+    '''Check for invalid characters in username'''
+    reg = r"[\w .-]*"
+    if re.fullmatch(reg,user):
+        return "OK"
+    else:
+        return "Error: Username contains invalid characters"
     
-    return ""
+def db_connect(statement=""):
+    '''Communicate with SQL database
+    Currently using built-in SQLite functionality'''
+    try:
+        with sqlite3.connect(dir_db) as conn:
+            cursor = conn.cursor()
+            cursor.execute(statement)
+            conn.commit()
+            return cursor.fetchone()
+            
+    except sqlite3.OperationalError as e:
+        print("Failed to open database: ", e)
+
+def validate(get):
+    '''Verify user identity through userid and hashed password'''
+    try:
+        user = get[1]
+        password = get[2]
+        row = db_connect(f"SELECT password FROM USERS WHERE userid='{user}';")
+        if row[0] == hashing(password):
+            return True
+        else:
+            return False
+    except:
+        return False
+    
+def user_exists(name="",key="name"):
+    '''Check if username or email is taken in the database'''
+    user = db_connect(f'''SELECT userid FROM Users 
+                WHERE LOWER({key})='{name.lower()}';''')
+    if user:
+        return user[0]
+    else:
+        return ""
 
 def get_directory(file="",userid=""):
-    #Find the appropriate directory based on filename
-    if file[:4] == "post":
-        #Post files start with "post", followed by index
-        return dir_post + file + ".ini"
+    '''Find the appropriate table based on chatroom'''
+    if file[:4].lower() == "post":
+        #Post files start with "Post", followed by index
+        return "Post" + file[4:]
     elif len(file) == 16 and file.isdigit():
         #Direct message names are composed of both user IDs, smaller first
         #Here, userid is caller and file is callee
         if int(file) < int(userid):
-            chat_id = file + userid
+            return "Room" + file + userid
         else:
-            chat_id = userid + file
-        return dir_msg + chat_id + ".ini"
-    
+            return "Room" + userid + file
     else:
         #Misc stuff defaults to the parent directory
-        return dir_chat + file + ".ini"
+        return file
 
-def update_users():
-    config = configparser.ConfigParser()
-    for i in users:
-        config[i] = users[i]
-    with open(dir_user,"w") as file:
-        config.write(file)
-
-def check_in_room(room_dict,id):
-    #Check if user has access to room
-    if "users" not in room_dict:
+def check_in_room(room_name="",id=""):
+    '''Check if user has access to room
+    Private message rooms are composed of two 16-digit user IDs'''
+    if len(room_name) < 36:
         return True
-    elif room_dict["users"]["user1"] == id or room_dict["users"]["user2"] == id:
+    elif db_connect(f'''SELECT * FROM Contacts{id}
+        WHERE room="{room_name}"'''):
         return True
     else:
         return False
+    
+def table_exists(table):
+    '''Check if table exists in database'''
+    return db_connect(f'''SELECT name FROM sqlite_master 
+                WHERE type='table' AND name="{table}";''')
+    
+def create_chat_table(room):
+    '''Create a chat room in database'''
+    db_connect(
+        '''CREATE TABLE IF NOT EXISTS ''' + room + ''' (
+            id INTEGER PRIMARY KEY,
+            user TEXT NOT NULL,
+            date DATE NOT NULL,
+            msg TEXT NOT NULL,
+            status TEXT
+        );'''
+    )
+
+def post_count():
+    '''Get the amount of posts sent'''
+    posts = 0
+    while True:
+        try:
+            if table_exists(f"Post{posts}"):
+                posts += 1
+            else:
+                break
+        except Exception as e:
+            break
+    return posts
+
 
 # RESPONSES
+
 def commands(get):
     cmd = get[0]
-    global posts
 
     if cmd == "message":
         user = get[1]
         msg = ""
         date = time()
-        post = get[3]
 
         if not validate(get):
             return "Error: Invalid credentials"
+        
+        post = get_directory(get[3],get[1])
         
         for i in get[4:]:
             msg += i+"\n"
@@ -155,29 +165,13 @@ def commands(get):
         if len(msg) > 500:
             return "Error: Message has to be max 500 characters"
 
-        post = get_directory(post,user)
-        config = configparser.ConfigParser()
-        config.read(post)
-
-        if not check_in_room(config,get[1]):
+        if not check_in_room(post,get[1]):
             return "Error: No access to room"
+        
+        db_connect(f'''INSERT INTO {post}(user,date,msg)
+                   VALUES('{user}','{date}','{msg}')''')
 
-        if "users" in config:
-            length = len(config)-2
-        else:
-            length = len(config)-1
-
-        with open(post,"a") as file:
-            config = configparser.ConfigParser()
-            md = {
-                "user" : user,
-                "date" : date,
-                "msg" : msg
-            }
-            
-            config["msg"+str(length)] = md
-            config.write(file)
-            return "OK"
+        return "OK"
 
     elif cmd == "post":
         user = get[1]
@@ -194,74 +188,63 @@ def commands(get):
         if len(msg) > 500:
             return "Error: Message has to be max 500 characters"
 
-        with open(dir_post+"post"+str(posts)+".ini","a") as file:
-            config = configparser.ConfigParser()
-            md = {
-                "user" : user,
-                "date" : date,
-                "msg" : msg
-            }
-
-            posts += 1
-            config["msg0"] = md
-            config.write(file)
-            return "OK"
+        table = "Post" + str(post_count())
+        create_chat_table(table)
+        db_connect(f'''INSERT INTO {table}(user,date,msg)
+                   VALUES('{user}','{date}','{msg}')''')
+        
+        return "OK"
 
     elif cmd == "num":
         if not validate(get):
             return "Error: Invalid credentials"
         
         post = get_directory(get[3],get[1])
-        config = configparser.ConfigParser()
-        config.read(post)
 
-        if not check_in_room(config,get[1]):
+        if not check_in_room(post,get[1]):
             return "Error: No access to room"
         
-        if "users" in config:
-            return str(len(config)-2)
-        else:
-            return str(len(config)-1)
+        return db_connect("SELECT COUNT(*) FROM " + post)[0]
     
     elif cmd == "postnum":
         if not validate(get):
             return "Error: Invalid credentials"
-        return str(posts)
+        return str(post_count())
 
     elif cmd == "get":
         if not validate(get):
             return "Error: Invalid credentials"
 
         post = get_directory(get[3],get[1])
-        config = configparser.ConfigParser()
-        config.read(post)
 
-        if not check_in_room(config,get[1]):
+        if not check_in_room(post,get[1]):
             return "Error: No access to room"
 
-        ls = config[get[4]]
-        msg = ls["user"] + "\n" + ls["date"] + "\n" + ls["msg"]
+        ls = db_connect(f'''SELECT * FROM {post} WHERE id='{int(get[4][3:]) + 1}';''')
+        msg = ls[1] + "\n" + ls[2] + "\n" + ls[3]
         
         return msg
-    
-    elif cmd == "default":
-        return "OK"
     
     elif cmd == "user":
         if not validate(get):
             return "Error: Invalid credentials"
-        if get[3] in users:
-            return users[get[3]]["username"]
+        user = db_connect(f"SELECT name FROM Users WHERE userid='{get[3]}';")
+        if user:
+            return user[0]
         else:
             return "[user " + get[3] + "]"
 
     elif cmd == "login":
         user = get[1]
         password = hashing(get[2])
-        for i in users:
-            j = users[i]
-            if (user == j["username"] or hashing(user) == j["email"]) and password == j["password"]:
-                return i
+        userid = db_connect(
+            f'''SELECT userid FROM Users
+                WHERE (name='{user}' OR email='{hashing(user)}')
+                AND password='{password}';'''
+        )
+        if userid:
+            return userid[0]
+        
         return "Error: Invalid username or password"
 
     elif cmd == "register":
@@ -275,25 +258,33 @@ def commands(get):
         reg = regex_user(user)
         if reg != "OK":
             return reg
-
-        for i in users:
-            j = users[i]
-            if j["username"] == user:
-                return "Error: Username taken"
-            if j["email"] == email:
-                return "Error: Email taken"
+        
+        if db_connect(f"SELECT * FROM Users WHERE name='{user}';"):
+            return "Error: Username taken"
+        if db_connect(f"SELECT * FROM Users WHERE email='{email}';"):
+            return "Error: Email taken"
         
         #Random 16-digit user ID
         userid = randnum()
 
-        while userid in users:
+        while db_connect(f"SELECT * FROM Users WHERE userid='{userid}';"):
             userid = randnum()
-        users[userid] = {"username" : user,
-                         "password" : password,
-                         "email" : email}
         
-        #Save new user
-        update_users()
+        #Add user to database
+        db_connect(
+            f'''INSERT INTO Users (userid,name,password,email,date_created)
+            VALUES('{userid}','{user}','{password}','{email}','{time()}');'''
+        )
+
+        db_connect(
+            f'''CREATE TABLE IF NOT EXISTS Contacts{userid} (
+                id INTEGER PRIMARY KEY,
+                contact TEXT NOT NULL,
+                room TEXT,
+                date_created DATE,
+                status TEXT
+            );'''
+        )
 
         return userid
     
@@ -317,38 +308,36 @@ def commands(get):
             if reg != "OK":
                 return reg
             
-            if users[userid][mode] == new:
+            if db_connect(f'''SELECT * FROM Users 
+                    WHERE userid='{userid}' AND name='{new}';'''):
                 return "Error: No changes made"
             
             if user_exists(new):
                 return "Error: Username taken"
-            
-            users[userid][mode] = new
-            users[userid]["password"] = hashing(pw)
+
+            db_connect(f'''UPDATE Users SET name='{new}', password='{hashing(pw)}'
+                    WHERE userid='{userid}';''')
 
         elif mode == "password":
             new = hashing(new_raw)
 
-            if users[userid][mode] == new:
+            if db_connect(f"SELECT * FROM Users WHERE password='{new}';"):
                 return "Error: No changes made"
             
-            users[userid][mode] = new
+            db_connect(f"UPDATE Users SET password='{new}' WHERE userid='{userid}';")
 
         elif mode == "email":
             new = hashing(new_raw)
 
-            if users[userid][mode] == new:
+            if db_connect(f"SELECT * FROM Users WHERE email='{new}';"):
                 return "Error: No changes made"
             if user_exists(new,"email"):
                 return "Error: Email taken"
             
-            users[userid][mode] = new
+            db_connect(f"UPDATE Users SET email='{new}' WHERE userid='{userid}';")
 
         else:
             return "Error: Invalid type of data"
-        
-        #Update user
-        update_users()
 
         return "OK"
     
@@ -368,38 +357,24 @@ def commands(get):
 
         chat_path = get_directory(other_id,user)
 
-        if os.path.exists(chat_path):
+        if table_exists(chat_path):
             return("Error: User already in contacts")
+
+        date_created = time()
         
+        create_chat_table(chat_path)
+
         #Add users to list
-        i = 0
-        while "msg"+str(i) in users[user]:
-            i += 1
-        users[user]["msg"+str(i)] = other_id
+        db_connect(
+            f'''INSERT INTO Contacts{user} (contact,room,date_created)
+                VALUES('{other_id}',"{chat_path}",'{date_created}');'''
+        )
 
-        i = 0
-        while "msg"+str(i) in users[other_id]:
-            i += 1
-        users[other_id]["msg"+str(i)] = user
+        db_connect(
+            f'''INSERT INTO Contacts{other_id} (contact,room,date_created)
+                VALUES('{user}',"{chat_path}",'{date_created}');'''
+        )
 
-        #Add users to chat data, smaller ID first
-        with open(chat_path,"w") as file:
-            config = configparser.ConfigParser()
-            if int(user) < int(other_id):
-                config["users"] = {
-                    "user1" : user,
-                    "user2" : other_id
-                }
-            else:
-                config["users"] = {
-                    "user1" : other_id,
-                    "user2" : user
-                }
-
-            config.write(file)
-
-        update_users()
-        
         return "Contact added"
     
     elif cmd == "contacts":
@@ -408,66 +383,66 @@ def commands(get):
         
         user = get[1]
 
-        i = 0
+        i = 1
         text = ""
-        while "msg"+str(i) in users[user]:
-            text += users[user]["msg"+str(i)] + "\n"
+
+        while True:
+            contact = db_connect(f'''SELECT contact FROM Contacts{user} 
+                WHERE id={i};''')
+            if contact:
+                text += contact[0] + "\n"
+            else:
+                break
             i += 1
 
         return text.strip()
     
     elif cmd == "version":
         return version
-    
-    print(cmd)
 
     return "Error: Invalid function " + str(cmd)
 
-'''#TCP socket server - old
-class tcp_handler(socketserver.BaseRequestHandler)  :
-    #Get client request
-    def respond(self,txt):
-        if len(txt) > 1024:
-            txt = "Server error: response too long"
-        print("Response", txt, "\n")
-        self.request.sendall(bytes(txt,"utf-8"))
 
-    def handle(self):
-        try:
-            print(self.request)
-            get = self.request.recv(1024).decode().split("\n")
-            print("Connected with ", self.client_address, time(), get)
-            resp = commands(get)
-            self.respond(resp)
+#Initialization
 
-        except Exception as e:
-            try:
-                self.respond("Server error: "+str(e))
-            except Exception as e:
-                print("Failed connection with client")'''
+#Create user data
+db_connect(
+    '''CREATE TABLE IF NOT EXISTS Users (
+        id INTEGER PRIMARY KEY,
+        userid TEXT NOT NULL,
+        name TEXT NOT NULL,
+        password TEXT NOT NULL,
+        email TEXT,
+        date_created DATE,
+        status TEXT
+    );'''
+)
+create_chat_table("main")
+
+#Get data count
+print(db_connect("SELECT count(*) from Users")[0],
+    "Users loaded")
+
+print(post_count(), "posts found")
 
 #Create networking socket
 print("Starting up server. Press Ctrl+C to close")
-
-'''with socketserver.TCPServer((HOST,PORT),tcp_handler) as server:  
-    print("Socket created\nWaiting for connections")
-    server.serve_forever()
-'''
 
 async def handle(websocket):
     async for message in websocket:
         get = message.split("\n")
         print("\nConnected",time(),get)
         try:
-            resp = commands(get)
+            resp = str(commands(get))
         except Exception as e:
+            print(traceback.format_exc())
             resp = "Server error: " + str(e)
         print("Response",resp)
         await websocket.send(resp)
 
 async def main():
     async with serve(handle, HOST, PORT):
-        print("WebSocket created\nWaiting for connections")
+        print("WebSocket created, waiting for connections")
         await asyncio.get_running_loop().create_future()  # run forever
 
 asyncio.run(main())
