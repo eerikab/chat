@@ -35,6 +35,11 @@ def hashing(txt):
     '''SHA256 hash on string'''
     return hashlib.sha256(bytes(txt,"utf-8")).hexdigest()
 
+def hash_password(userid, password):
+    '''Hash password with userid and additional data'''
+    pass_txt = "[user]"+userid+"[pass]"+password
+    return hashlib.sha256(bytes(pass_txt,"utf-8")).hexdigest()
+
 def randnum():
     '''Random 16-digit number in string format'''
     id = ""
@@ -57,11 +62,11 @@ def db_connect(statement=""):
         with sqlite3.connect(dir_db) as conn:
             cursor = conn.cursor()
             cursor.execute(statement)
-            conn.commit()
             return cursor.fetchone()
             
     except sqlite3.OperationalError as e:
         print("Failed to open database: ", e)
+        return ("Server error: " + str(e))
 
 def validate(get):
     '''Verify user identity through userid and hashed password'''
@@ -69,7 +74,7 @@ def validate(get):
         user = get[1]
         password = get[2]
         row = db_connect(f"SELECT password FROM USERS WHERE userid='{user}';")
-        if row[0] == hashing(password):
+        if row[0] == hash_password(user,password):
             return True
         else:
             return False
@@ -119,7 +124,9 @@ def table_exists(table):
     
 def create_chat_table(room):
     '''Create a chat room in database'''
-    db_connect(
+    #Statements modifying the database should return an empty tuple
+    #If a value is returned, something went wrong
+    return db_connect(
         '''CREATE TABLE IF NOT EXISTS ''' + room + ''' (
             id INTEGER PRIMARY KEY,
             user TEXT NOT NULL,
@@ -168,8 +175,10 @@ def commands(get):
         if not check_in_room(post,get[1]):
             return "Error: No access to room"
         
-        db_connect(f'''INSERT INTO {post}(user,date,msg)
+        sql = db_connect(f'''INSERT INTO {post}(user,date,msg)
                    VALUES('{user}','{date}','{msg}')''')
+        if sql:
+            return sql[0]
 
         return "OK"
 
@@ -189,9 +198,14 @@ def commands(get):
             return "Error: Message has to be max 500 characters"
 
         table = "Post" + str(post_count())
-        create_chat_table(table)
-        db_connect(f'''INSERT INTO {table}(user,date,msg)
+        sql = create_chat_table(table)
+        if sql:
+            return sql[0]
+        
+        sql = db_connect(f'''INSERT INTO {table}(user,date,msg)
                    VALUES('{user}','{date}','{msg}')''')
+        if sql:
+            return sql[0]
         
         return "OK"
 
@@ -236,20 +250,25 @@ def commands(get):
 
     elif cmd == "login":
         user = get[1]
-        password = hashing(get[2])
+        password = get[2]
         userid = db_connect(
             f'''SELECT userid FROM Users
-                WHERE (name='{user}' OR email='{hashing(user)}')
-                AND password='{password}';'''
+                WHERE name='{user}' OR email='{hashing(user)}';'''
         )
+
         if userid:
-            return userid[0]
+            if db_connect(
+                f'''SELECT userid FROM Users
+                WHERE (name='{user}' OR email='{hashing(user)}')
+                AND password='{hash_password(userid[0],password)}';'''
+            ) or "error" in userid[0]:
+                return userid[0]
         
         return "Error: Invalid username or password"
 
     elif cmd == "register":
         user = get[1]
-        password = hashing(get[2])
+        password = get[2]
         email = hashing(get[3])
 
         if len(user) < 4 or len(user) > 32:
@@ -269,14 +288,18 @@ def commands(get):
 
         while db_connect(f"SELECT * FROM Users WHERE userid='{userid}';"):
             userid = randnum()
+
+        pass_hash = hash_password(userid, password)
         
         #Add user to database
-        db_connect(
+        sql = db_connect(
             f'''INSERT INTO Users (userid,name,password,email,date_created)
-            VALUES('{userid}','{user}','{password}','{email}','{time()}');'''
+            VALUES('{userid}','{user}','{pass_hash}','{email}','{time()}');'''
         )
+        if sql:
+            return sql[0]
 
-        db_connect(
+        sql = db_connect(
             f'''CREATE TABLE IF NOT EXISTS Contacts{userid} (
                 id INTEGER PRIMARY KEY,
                 contact TEXT NOT NULL,
@@ -285,6 +308,8 @@ def commands(get):
                 status TEXT
             );'''
         )
+        if sql:
+            return sql[0]
 
         return userid
     
@@ -315,16 +340,21 @@ def commands(get):
             if user_exists(new):
                 return "Error: Username taken"
 
-            db_connect(f'''UPDATE Users SET name='{new}', password='{hashing(pw)}'
-                    WHERE userid='{userid}';''')
+            sql = db_connect(f'''UPDATE Users SET name='{new}', 
+                        password='{hash_password(userid, pw)}'
+                        WHERE userid='{userid}';''')
+            if sql:
+                return sql[0]
 
         elif mode == "password":
-            new = hashing(new_raw)
+            new = hash_password(userid,new_raw)
 
             if db_connect(f"SELECT * FROM Users WHERE password='{new}';"):
                 return "Error: No changes made"
             
-            db_connect(f"UPDATE Users SET password='{new}' WHERE userid='{userid}';")
+            sql = db_connect(f"UPDATE Users SET password='{new}' WHERE userid='{userid}';")
+            if sql:
+                return sql[0]
 
         elif mode == "email":
             new = hashing(new_raw)
@@ -334,7 +364,9 @@ def commands(get):
             if user_exists(new,"email"):
                 return "Error: Email taken"
             
-            db_connect(f"UPDATE Users SET email='{new}' WHERE userid='{userid}';")
+            sql = db_connect(f"UPDATE Users SET email='{new}' WHERE userid='{userid}';")
+            if sql:
+                return sql[0]
 
         else:
             return "Error: Invalid type of data"
@@ -362,18 +394,24 @@ def commands(get):
 
         date_created = time()
         
-        create_chat_table(chat_path)
+        sql = create_chat_table(chat_path)
+        if sql:
+            return sql[0]
 
         #Add users to list
-        db_connect(
+        sql = db_connect(
             f'''INSERT INTO Contacts{user} (contact,room,date_created)
                 VALUES('{other_id}',"{chat_path}",'{date_created}');'''
         )
+        if sql:
+            return sql[0]
 
-        db_connect(
+        sql = db_connect(
             f'''INSERT INTO Contacts{other_id} (contact,room,date_created)
                 VALUES('{user}',"{chat_path}",'{date_created}');'''
         )
+        if sql:
+            return sql[0]
 
         return "Contact added"
     
@@ -430,15 +468,17 @@ print("Starting up server. Press Ctrl+C to close")
 
 async def handle(websocket):
     async for message in websocket:
-        get = message.split("\n")
-        print("\nConnected",time(),get)
-        try:
-            resp = str(commands(get))
-        except Exception as e:
-            print(traceback.format_exc())
-            resp = "Server error: " + str(e)
-        print("Response",resp)
-        await websocket.send(resp)
+        with sqlite3.connect(dir_db) as conn:
+            get = message.split("\n")
+            print("\nConnected",time(),get)
+            try:
+                resp = str(commands(get)).strip()
+            except Exception as e:
+                print(traceback.format_exc())
+                resp = "Server error: " + str(e)
+            print("Response",resp)
+            conn.commit()
+            await websocket.send(resp)
 
 async def main():
     async with serve(handle, HOST, PORT):
