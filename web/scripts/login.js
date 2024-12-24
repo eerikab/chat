@@ -43,7 +43,7 @@ function login(resp)
     sessionStorage.setItem("userid",userid);
     sessionStorage.setItem("password",pass_hash);
 
-    if (check_remember.checked)
+    if (check_remember && check_remember.checked)
     {
         localStorage.setItem("username",username);
         localStorage.setItem("password",pass_hash);

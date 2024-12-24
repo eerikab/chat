@@ -141,7 +141,7 @@ def post_count():
     posts = 0
     while True:
         try:
-            if table_exists(f"Post{posts}"):
+            if table_exists(f"Post{posts+1}"):
                 posts += 1
             else:
                 break
@@ -197,7 +197,7 @@ def commands(get):
         if len(msg) > 500:
             return "Error: Message has to be max 500 characters"
 
-        table = "Post" + str(post_count())
+        table = "Post" + str(post_count() + 1)
         sql = create_chat_table(table)
         if sql:
             return sql[0]
@@ -234,7 +234,7 @@ def commands(get):
         if not check_in_room(post,get[1]):
             return "Error: No access to room"
 
-        ls = db_connect(f'''SELECT * FROM {post} WHERE id='{int(get[4][3:]) + 1}';''')
+        ls = db_connect(f'''SELECT * FROM {post} WHERE id='{int(get[4])}';''')
         msg = ls[1] + "\n" + ls[2] + "\n" + ls[3]
         
         return msg

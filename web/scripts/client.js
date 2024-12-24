@@ -106,15 +106,15 @@ class contact_btn {
                 if (!(msgs[id]))
                     msgs[id] = {};
 
-                if ((num-1).toString() in msgs[id])
+                if (num.toString() in msgs[id])
                 {
-                    var data = msgs[id][(num-1).toString()];
+                    var data = msgs[id][num.toString()];
                     writemsg(btn,id,time_format(data[1]),"\n"+data[2]);
                     userbox.appendChild(btn);
                 }
                 else
                 {
-                    request_user("get",id+"\nmsg"+(num-1).toString(),function(result)
+                    request_user("get",id+"\n"+num.toString(),function(result)
                     {
                         var data = result.split("\n");
                         msgs[id][String(num-1)] = [data[0],data[1], data[2]];
@@ -131,27 +131,6 @@ class contact_btn {
             sessionStorage.setItem("room", id);
             location.href = "messages.html";
         });
-    }
-
-    receive_num(result)
-    {
-        var num = parseInt(result)
-        if (num == 0)
-        {
-            writemsg(btn,id,"","No messages");
-            userbox.appendChild(btn);
-        }
-        else
-        {
-            request_user("get",id,this.receive_msg);
-        }
-    }
-
-    receive_msg(result)
-    {
-        var data = result.split("\n");
-        writemsg(btn,id,data[1],data[2]);
-        userbox.appendChild(btn);
     }
 }
 
@@ -233,18 +212,17 @@ function receive_num(result)
 {
     //Gets the number of messages in room
     num = parseInt(result);
-    if (temp_max === num-1) {
+    if (temp_max === num) {
         return;
     }
     if (!(room in msgs))
         msgs[room] = {};
-    temp_max = num-1;
-    temp_min = num-51;
+    temp_max = num;
+    temp_min = num-50;
     if (!num)
         return;
-    if (temp_min < 0)
-        temp_min = 0;
-    num -= 1;
+    if (temp_min < 1)
+        temp_min = 1;
     phase = "messages";
     if ("max" in msgs[room] && msgs[room]["max"] < temp_min) {
         msgs[room]["max"] = num;
@@ -254,7 +232,7 @@ function receive_num(result)
     while (num >= temp_min) {
         if (!(String(num) in msgs[room]))
         {
-            request_user("get",room + "\nmsg" + String(num),receive_msg);
+            request_user("get",room + "\n" + String(num),receive_msg);
             break;
         }
         num -= 1;
@@ -270,17 +248,16 @@ function post_num(result)
     num = parseInt(result);
     if (!num)
         return;
-    temp_max = num-1;
-    temp_min = num-51;
+    temp_max = num;
+    temp_min = num-50;
     room = "post";
     phase = "posts";
-    if (temp_min < 0)
-        temp_min = 0;
-    num -= 1;
+    if (temp_min < 1)
+        temp_min = 1;
     while (num >= temp_min){
         if (!(String(num) in posts))
         {
-            request_user("get","post" + String(num) + "\nmsg0",receive_msg);
+            request_user("get","post" + String(num) + "\n1",receive_msg);
             break;
         }
         num -= 1;
@@ -317,7 +294,7 @@ function receive_msg(result)
         num -= 1;
         while(num >= temp_min){
             if (!(String(num) in posts)){
-                request_user("get","post" + String(num) + "\nmsg0",receive_msg);
+                request_user("get","post" + String(num) + "\n1",receive_msg);
                 return;
             }
             num -= 1;
@@ -335,7 +312,7 @@ function receive_msg(result)
         num -= 1;
         while (num >= temp_min){
             if (!(String(num) in msgs[room])){
-                request_user("get",room + "\nmsg" + String(num),receive_msg);
+                request_user("get",room + "\n" + String(num),receive_msg);
                 return;
             }
             num -= 1;
@@ -387,16 +364,15 @@ function refresh()
     {
         //Gets the number of messages in room
         num = msgs[room]["min"];
-        temp_max = num-1;
-        temp_min = num-51;
+        temp_max = num;
+        temp_min = num-50;
         if (!num)
             return;
-        if (temp_min < 0)
-            temp_min = 0;
-        num -= 1;
+        if (temp_min < 1)
+            temp_min = 1;
         phase = "messages";
 
-        request_user("get",room + "\nmsg" + String(num),receive_msg);
+        request_user("get",room + "\n" + String(num),receive_msg);
     }
     else
     {
@@ -502,7 +478,7 @@ function get_friend(result)
     friend_list = result.split("\n");
     for (var i = 0; i < friend_list.length; i++)
     {
-        if (!(friend_list[i] in users_raw))
+        if (friend_list[i] && !(friend_list[i] in users_raw))
             users_raw.push(friend_list[i]);
     }   
     get_user();
@@ -519,15 +495,18 @@ function display_friends()
 
     for (var i = 0; i < friend_list.length; i++)
     {
-        if (!(friend_list[i] in friend_used))
+        if (friend_list[i])
         {
-            new userbtn(friend_list[i]);
-            friend_used.push(friend_list[i]);
-        }  
+            if (!(friend_list[i] in friend_used))
+            {
+                new userbtn(friend_list[i]);
+                friend_used.push(friend_list[i]);
+            }  
 
-        if (userbox)
-        {
-            new contact_btn(friend_list[i]);
+            if (userbox)
+            {
+                new contact_btn(friend_list[i]);
+            }
         }
     }
 

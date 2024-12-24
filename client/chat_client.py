@@ -225,10 +225,10 @@ class client():
         self.post_btn = []
         #Get total post count
         count = int(self.request("postnum"))
-        msg_max = count-1
-        msg_min = count-51
-        if msg_min < 0:
-            msg_min = 0
+        msg_max = count
+        msg_min = count-50
+        if msg_min < 1:
+            msg_min = 1
         self.chkpost(msg_min,msg_max)
 
         for i in reversed(range(self.post_min,self.post_max+1)):
@@ -239,7 +239,7 @@ class client():
     def chkpost(self,msg_min,msg_max):
         if msg_max >= 0:
             for i in range(msg_min,msg_max+1):
-                get = self.request("get","post"+str(i)+"\nmsg0")
+                get = self.request("get","post"+str(i)+"\n1")
                 get = get.split("\n")
                 msg = ""
                 for j in get[2:]:
@@ -268,19 +268,19 @@ class client():
         if "min" not in self.msgs[self.chatname]:
             self.msgs[self.chatname]["min"] = -1
 
-        if count != self.msgs[self.chatname]["max"]+1:
+        if count != self.msgs[self.chatname]["max"]:
             #Get up to 50 messages at a time
-            msg_max = count-1
-            msg_min = count-51
-            if msg_min < 0:
-                msg_min = 0
+            msg_max = count
+            msg_min = count-50
+            if msg_min < 1:
+                msg_min = 1
             self.chkmsg(msg_min,msg_max)
 
         elif self.scrollbar.widget.get()[0] == 0 and self.msgs[self.chatname]["min"] > 0 and not self.just_opened:
             msg_max = self.msgs[self.chatname]["min"]-1
             msg_min = msg_max-51
-            if msg_min < 0:
-                msg_min = 0
+            if msg_min < 1:
+                msg_min = 1
             self.chkmsg(msg_min,msg_max)
 
         elif not self.just_opened or count == 0: return
@@ -290,7 +290,7 @@ class client():
         self.label.enable()
         num = 0
         self.label.erase()
-        for i in range(self.msgs[self.chatname]["min"],self.msgs[self.chatname]["max"]+1):
+        for i in range(self.msgs[self.chatname]["min"], self.msgs[self.chatname]["max"]+1):
             msg = self.msgs[self.chatname][str(i)]
 
             self.label.insert("\n"+msg["user"]+"     ","User")
@@ -308,7 +308,7 @@ class client():
                     msg = self.msgs[self.chatname][sect]
                 except Exception as e:
                     #print(str(e))
-                    get = self.request("get",self.chatname +  "\nmsg" + str(i))
+                    get = self.request("get",self.chatname +  "\n" + str(i))
                     get = get.split("\n")
                     msg = ""
                     for j in get[2:]:
@@ -463,9 +463,8 @@ class contact_btn():
         if num == 0:
             text += "\n\nNo messages"
         else:
-            num -= 1
             if str(num) not in master.msgs[i]:
-                req = master.request(cmd="get",txt=i + "\nmsg" + str(num)).split("\n")
+                req = master.request(cmd="get",txt=i + "\n" + str(num)).split("\n")
                 msg = ""
                 for j in req[2:]:
                     msg += j
