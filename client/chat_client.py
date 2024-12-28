@@ -145,6 +145,7 @@ class client():
 
         self.frame = cw.frame(self,self.msg_frame,fill="x",side="bottom")
         self.error = cw.error(self,self.frame)
+        self.error_current = self.error
         self.msg_field = cw.text(self,self.frame,
                                  height=3,
                                  fill="x",
@@ -190,7 +191,7 @@ class client():
         cw.label(self,self.frame_add,text="Enter a friend's username to add them to contact list:")
         self.add_name = cw.entry(self,self.frame_add,pady=8)
         cw.button(self,self.frame_add,text="Add",command=self.add_friend)
-        self.add_error = cw.label(self,self.frame_add,text="")
+        self.add_error = cw.error(self,self.frame_add,text="")
         cw.label(self,self.frame_add,text="Direct messages:")
         #self.frame_contacts = cw.frame(self,self.frame_add,expand=1,fill="both",bg="textbox")
         self.frame_contacts = cw.canvas_window(self,self.frame_add)
@@ -201,30 +202,37 @@ class client():
         ch, resp = settings.request(msg)
 
         if not ch:
-            self.error.set(resp)
+            self.error_current.set(resp)
             
         return resp
 
     def post(self):
-        _msg = self.msg_field.get()
-        if _msg != "":
-            self.request("message",self.chatname+"\n"+_msg)
-            self.msg_field.erase()
-            self.receive()
+        self.error_current.set("")
+        send = self.msg_field.get().strip()
+        if send != "":
+            if self.request("message",self.chatname+"\n"+send) == "OK":
+                self.msg_field.erase()
+                self.receive()
     
     def createpost(self):
-        _msg = self.post_field.get()
-        if _msg != "":
-            self.request("post",_msg)
-            self.post_field.erase()
-            self.postrecv()
+        self.error_current.set("")
+        send = self.post_field.get().strip()
+        if send != "":
+            if self.request("post",send) == "OK":
+                self.post_field.erase()
+                self.postrecv()
 
     def postrecv(self):
         for i in self.post_btn:
             i.button.destroy()
         self.post_btn = []
+        
         #Get total post count
-        count = int(self.request("postnum"))
+        try:
+            count = int(self.request("postnum"))
+        except:
+            return
+        
         msg_max = count
         msg_min = count-50
         if msg_min < 1:
@@ -260,7 +268,11 @@ class client():
                     self.post_min = i
 
     def receive(self):
-        count = int(self.request("num",self.chatname))
+        try:
+            count = int(self.request("num",self.chatname))
+        except:
+            return
+        
         if self.chatname not in self.msgs:
             self.msgs[self.chatname] = dict()
         if "max" not in self.msgs[self.chatname]:
@@ -268,7 +280,10 @@ class client():
         if "min" not in self.msgs[self.chatname]:
             self.msgs[self.chatname]["min"] = -1
 
-        if count != self.msgs[self.chatname]["max"]:
+        self.keep_updating = True
+
+        
+        if count != self.msgs[self.chatname]["max"] and count > 0:
             #Get up to 50 messages at a time
             msg_max = count
             msg_min = count-50
@@ -283,7 +298,8 @@ class client():
                 msg_min = 1
             self.chkmsg(msg_min,msg_max)
 
-        elif not self.just_opened or count == 0: return
+        elif not self.just_opened or count == 0:
+            return
 
         self.just_opened = False
 
@@ -345,7 +361,7 @@ class client():
             ls.reverse()
             for i in ls:
                 name = self.get_username(i)
-                if name not in self.contact_list:
+                if name not in self.contact_list and "error:" not in name.lower():
                     cw.radio(self,self.contacts,padiy=4,variable=self.friend,text=name,value=i,width=16,command=self.switch)
                     contact_btn(i,self)
                     self.contact_list.append(name)
@@ -374,35 +390,39 @@ class client():
         self.label.disable()
 
         self.just_opened = True
+        self.keep_updating = False
 
         if page == "Posts":
             self.post_frame.pack(fill="both",expand=1,side="right")
             self.msg_frame.pack_forget()
             self.contacts.pack_forget()
             self.frame_add.pack_forget()
+            self.error_current = self.error_post
+            self.error_current.set("")
             self.postrecv()
-            self.keep_updating = False
         elif page == "Messages":
             self.contacts.pack(fill="y",side="left")
+            self.post_frame.pack_forget()
             if self.friend.get() == "add contacts":
                 self.frame_add.pack(fill="both",expand=1,side="right")
                 self.msg_frame.pack_forget()
-                self.add_error.set("")
                 self.page_title.set("Messages - Add contacts")
-                self.keep_updating = False
+                self.error_current = self.add_error
+                self.error_current.set("")
             else:
                 self.msg_frame.pack(fill="both",expand=1,side="right")
                 self.frame_add.pack_forget()
                 self.chatname = self.friend.get()
+                self.error_current = self.error
+                self.error_current.set("")
                 self.receive()
                 self.page_title.set("Messages - " + self.get_username(self.chatname))
-                self.keep_updating = True
-            self.post_frame.pack_forget()
             self.get_contacts()
         else:
             self.msg_frame.pack(fill="both",expand=1,side="right")
             self.post_frame.pack_forget()
-            self.keep_updating = True
+            self.error_current = self.error
+            self.error_current.set("")
             self.receive()
 
     def logout(self):
@@ -415,8 +435,12 @@ class client():
         self.master.login()
 
     def add_friend(self):
-        resp = self.request("add_contact", self.add_name.get() )
-        self.add_error.set(resp)
+        self.add_error.set("")
+        if not self.add_name.get():
+            self.add_error.set("Please write a user's name first")
+            return
+        
+        resp = self.request("add_contact", self.add_name.get())
         self.get_contacts()
 
 class postbtn():
