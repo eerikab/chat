@@ -1,6 +1,12 @@
 '''Server code, stores data and handles communication
 Keep separate from the client'''
 
+'''Debug/Release switch. Set to 1 to use set public IP, 0 for localhost'''
+release = 1
+
+'''For client programs, the switch and IP to connect to is in
+client/chat_global.py and web/scripts/functions.js respectively'''
+
 #import socketserver
 import os
 import datetime
@@ -14,6 +20,9 @@ import sqlite3
 import traceback
 
 HOST, PORT = "localhost", 9000
+
+if release:
+    HOST = "0.0.0.0"
 
 #Versions
 version = "0.0.0"

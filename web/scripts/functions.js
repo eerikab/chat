@@ -1,5 +1,8 @@
 ///Functions shared between pages
 
+//Enable "release" to use production IP, otherwise use localhost
+const release = 0
+
 //Declare variable
 var username;
 var password;
@@ -8,10 +11,12 @@ var userid;
 var room;
 var friend;
 
-//import {Server} from "socket.io";
-//var net = require("net");
+//Networking
 const url = "127.0.0.1";
 const port = 9000;
+
+if (release)
+    url = "3.75.158.163" //Public IP of server
 
 var server_version = sessionStorage.getItem("version");
 

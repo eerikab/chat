@@ -2,6 +2,13 @@
 
 import os
 
+#Connection
+release = 0 #Release/Debug flag, 0 is for localhost, 1 for public ip
+HOST, PORT = "localhost", 9000
+
+if release:
+    HOST = "3.75.158.163" #Server IP for released application
+
 #Versioning
 version = "0.0.0" #App version, used later
 server_version = ""
