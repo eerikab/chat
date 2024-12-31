@@ -49,18 +49,21 @@ chat_database_test = ""
 chat_release = 0
 
 #Read variables from "env.json" if exists
-with open(os.path.dirname(__file__) + "/env.json") as file:
-    data = json.loads(file.read())
-    try:
-        chat_database = data["CHAT_DATABASE"]
-    finally:
+try:
+    with open(os.path.dirname(__file__) + "/env.json") as file:
+        data = json.loads(file.read())
         try:
-            chat_database_test = data["CHAT_DATABASE_TEST"]
+            chat_database = data["CHAT_DATABASE"]
         finally:
             try:
-                chat_release = data["CHAT_RELEASE"]
-            except:
-                pass
+                chat_database_test = data["CHAT_DATABASE_TEST"]
+            finally:
+                try:
+                    chat_release = data["CHAT_RELEASE"]
+                except:
+                    pass
+except:
+    pass
 
 #Load environment variables if exists
 if "CHAT_DATABASE" in os.environ:
