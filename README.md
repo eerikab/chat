@@ -5,15 +5,15 @@ Made in Python and basic HTML
 Working title TickChat
 
 ## Setup
-Python 3 is required with Tkinter and Websockets modules
+Python 3 is required with Tkinter, Websockets, Psycopg2 modules
 
-Tkinter is in Python standard library, but not included on Linux. To install necessary modules on Debian/Ubuntu, use
+Tkinter is in Python standard library, but not included by default on Linux. To install all necessary Python modules on Debian/Ubuntu, use
 ```
-sudo apt install python3-tk python3-websockets
+sudo apt install python3-tk python3-websockets python3-psycopg2
 ```
 Otherwise install websockets through pip
 ```
-pip install websockets
+pip install websockets psycopg2
 ```
 
 ## Usage
