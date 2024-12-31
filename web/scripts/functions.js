@@ -1,7 +1,7 @@
 ///Functions shared between pages
 
 //Enable "release" to use production IP, otherwise use localhost
-const release = 0
+const release = 1
 
 //Declare variable
 var username;

@@ -13,3 +13,7 @@ test.py
 
 #unrelated system files
 .directory
+
+#environment variables
+.env
+env.*
