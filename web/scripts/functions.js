@@ -12,11 +12,12 @@ var room;
 var friend;
 
 //Networking
-const url = "127.0.0.1";
-const port = 9000;
+let HOST = "localhost"; //Local address for testing
+let PORT = "9000";
 
 if (release)
-    url = "3.75.158.163" //Public IP of server
+    HOST = "chat-4zh4.onrender.com"; //Public address of server
+    PORT = "";
 
 var server_version = sessionStorage.getItem("version");
 
@@ -44,7 +45,7 @@ function request_raw(text,func)
 {
     error_reset()
     console.log("request",text);
-    const socket = new WebSocket("ws://localhost:9000");
+    const socket = new WebSocket("wss://" + HOST + ":" + PORT);
 
     //Request data from server
     /*var client = new net.Socket(); //Net socket

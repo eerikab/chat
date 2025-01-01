@@ -106,8 +106,7 @@ def theming():
 
 async def send(command):
     #Communicate through websocket
-
-    async with connect(f"ws://{cg.HOST}:{cg.PORT}") as websocket:
+    async with connect(f"wss://{cg.HOST}:{cg.PORT}/") as websocket:
         await websocket.send(command)
         return await websocket.recv()
 
