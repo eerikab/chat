@@ -1,11 +1,7 @@
 ///Scripting for Login and Register pages
 
 //Clear user credentials from storage
-sessionStorage.removeItem("username");
-sessionStorage.removeItem("userid");
-sessionStorage.removeItem("password");
-sessionStorage.removeItem("room");
-sessionStorage.removeItem("friend");
+sessionStorage.clear();
 
 username = "";
 password = "";

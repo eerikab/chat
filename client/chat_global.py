@@ -4,13 +4,13 @@ import os
 
 #Connection
 release = 1 #Release/Debug flag, 0 is for localhost, 1 for public ip
-HOST, PORT = "localhost", 9000
+HOST, PORT = "ws://localhost", 9000
 
 if release:
-    HOST, PORT = "chat-4zh4.onrender.com", "" #Server IP for released application
+    HOST, PORT = "wss://chat-4zh4.onrender.com", "" #Server IP for released application
 
 #Versioning
-version = "0.0.0" #App version, used later
+version = "0.0.1" #App version, increase with each released update
 server_version = ""
 
 #User

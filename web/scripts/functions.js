@@ -3,6 +3,9 @@
 //Enable "release" to use production IP, otherwise use localhost
 const release = 1
 
+//App version, increase with each released
+const version = "0.0.1"
+
 //Declare variable
 var username;
 var password;
@@ -12,14 +15,16 @@ var room;
 var friend;
 
 //Networking
-let HOST = "localhost"; //Local address for testing
+let HOST = "ws://localhost"; //Local address for testing
 let PORT = "9000";
 
 if (release)
-    HOST = "chat-4zh4.onrender.com"; //Public address of server
+{
+    HOST = "wss://chat-4zh4.onrender.com"; //Public address of server
     PORT = "";
+}
 
-var server_version = sessionStorage.getItem("version");
+let server_version = sessionStorage.getItem("version");
 
 let error = document.querySelector(".error");
 
@@ -45,7 +50,8 @@ function request_raw(text,func)
 {
     error_reset()
     console.log("request",text);
-    const socket = new WebSocket("wss://" + HOST + ":" + PORT);
+    console.log(HOST + ":" + PORT)
+    const socket = new WebSocket(HOST + ":" + PORT);
 
     //Request data from server
     /*var client = new net.Socket(); //Net socket
