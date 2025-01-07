@@ -112,7 +112,9 @@ async def send(command):
 
 def request(command):
     try:
+        print("\nRequest",command)
         resp = asyncio.run(send(command))
+        print("Response",resp)
 
         if resp[:5] == "Error" or resp[:12] == "Server error":
             return False, resp

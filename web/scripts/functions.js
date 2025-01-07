@@ -3,8 +3,8 @@
 //Enable "release" to use production IP, otherwise use localhost
 const release = 1
 
-//App version, increase with each released
-const version = "0.0.1"
+//App version, increase with each released update
+const version = "0.0.2"
 
 //Declare variable
 var username;

@@ -18,6 +18,7 @@ let friend_list = [];
 let phase = "contacts";
 let first_load = true;
 let friend_used = [];
+let checking = false;
 sessionStorage.setItem("prevpage",location.href);
 
 if (!username)
@@ -144,6 +145,9 @@ function display_user()
 //Get messages and posts
 function receive_start()
 {
+    if (checking)
+        return;
+
     //Find correct chatbox node
     var chat = "";
     if (chatbox)
@@ -155,12 +159,14 @@ function receive_start()
     else if (userbox)
         chat = userbox;
 
+    checking = true;
+
     //Clear chatbox from default content
     if (first_load)
     {
+        first_load = false;
         while(chat.firstChild)
             chat.removeChild(chat.lastChild);
-        first_load = false;
 
         if (userlist)
         {
@@ -212,7 +218,8 @@ function receive_num(result)
 {
     //Gets the number of messages in room
     num = parseInt(result);
-    if (temp_max === num) {
+    if (temp_max >= num) {
+        checking = false;
         return;
     }
     if (!(room in msgs))
@@ -238,8 +245,11 @@ function receive_num(result)
         num -= 1;
     }
     messagebox.value = "";
+
     if (num < temp_min)
+    {
         display_messages();
+    }
 }
 
 function post_num(result)
@@ -264,7 +274,9 @@ function post_num(result)
     }
 
     if (num < temp_min)
+    {
         display_posts();
+    }
 }
 
 function receive_msg(result)
@@ -356,11 +368,18 @@ function display_messages()
 
     save_msgs();
     window.scrollTo(0, document.body.scrollHeight);
+
+    checking = false;
 }
 
 function refresh()
 {
-    if (window.scrollY === 0 && [room] in msgs && msgs[room]["min"] > 0)
+    //Check for new messages unless already checking
+    if (checking)
+        return;
+    checking = true;
+
+    if (window.scrollY === 0 && [room] in msgs && msgs[room]["min"] > 1)
     {
         //Gets the number of messages in room
         num = msgs[room]["min"];
@@ -398,6 +417,7 @@ function display_posts()
     linebreak(postbox);
 
     save_msgs();
+    checking = false;
 }
 
 //Get user names
@@ -511,12 +531,16 @@ function display_friends()
     }
 
     new userbtn("main");
-        friend_used.push("main");
+    friend_used.push("main");
+
+    save_msgs();
 
     if (postbox)
         request_user("postnum","",post_num);
     else if (!userbox)
         request_user("num",room,receive_num);
+    else
+        checking = false;
 }
 
 //Text fields

@@ -93,6 +93,7 @@ class client():
         self.chatname = "main"
         self.keep_updating = False
         self.win.widget.after(2000,self.update)
+        self.checking = False
 
         '''#Load cache
         os.makedirs(directory+"/cache",exist_ok=True)
@@ -223,16 +224,21 @@ class client():
                 self.postrecv()
 
     def postrecv(self):
-        for i in self.post_btn:
-            i.button.destroy()
-        self.post_btn = []
+        if self.checking:
+            return
+        self.checking = True
         
         #Get total post count
         try:
             count = int(self.request("postnum"))
         except:
+            self.checking = False
             return
         
+        for i in self.post_btn:
+            i.button.destroy()
+        self.post_btn = []
+
         msg_max = count
         msg_min = count-50
         if msg_min < 1:
@@ -243,6 +249,7 @@ class client():
             self.post_btn.append( postbtn(i,self))
 
         self.win.widget.after(100,self.posts_frame.post_region)
+        self.checking = False
             
     def chkpost(self,msg_min,msg_max):
         if msg_max >= 0:
@@ -268,9 +275,14 @@ class client():
                     self.post_min = i
 
     def receive(self):
+        if self.checking:
+            return
+        self.checking = True
+        
         try:
             count = int(self.request("num",self.chatname))
         except:
+            self.checking = False
             return
         
         if self.chatname not in self.msgs:
@@ -281,7 +293,6 @@ class client():
             self.msgs[self.chatname]["min"] = -1
 
         self.keep_updating = True
-
         
         if count != self.msgs[self.chatname]["max"] and count > 0:
             #Get up to 50 messages at a time
@@ -299,6 +310,7 @@ class client():
             self.chkmsg(msg_min,msg_max)
 
         elif not self.just_opened or count == 0:
+            self.checking = False
             return
 
         self.just_opened = False
@@ -313,6 +325,8 @@ class client():
             self.label.insert(msg["date"]+"\n","Date")
             self.label.insert(msg["msg"]+"\n")
         self.label.disable()
+
+        self.checking = False
 
     def chkmsg(self,msg_min,msg_max):
         with open(cachedir+"main.txt","a") as file:
@@ -350,7 +364,7 @@ class client():
             #config.write(file)
 
     def update(self):
-        if self.keep_updating:
+        if self.keep_updating and not self.checking:
             self.receive()
         self.win.widget.after(delay,self.update)
 
@@ -391,6 +405,7 @@ class client():
 
         self.just_opened = True
         self.keep_updating = False
+        self.checking = False
 
         if page == "Posts":
             self.post_frame.pack(fill="both",expand=1,side="right")
