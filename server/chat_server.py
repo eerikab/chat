@@ -11,20 +11,24 @@ import sys
 import asyncio
 import psycopg2.sql
 from websockets.server import serve
+from websockets.client import connect
 #import sqlite3
 import traceback
 import psycopg2
 import json
+import http
+import signal
 
 '''Version'''
-version = "0.0.1" #Version of server program, increase it with each update
+version = "0.0.2" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
 
 '''Debug/Release switch
 When it's 1, public IP and production database is used
-On 0, it uses localhost and testing database'''
+On 0, it uses localhost and testing database
+Instructions for forcing release database on your server below'''
 release = 0
 
 '''For client programs, the switch and IP to connect to is in
@@ -54,6 +58,8 @@ Example JSON:
 chat_database = ""
 chat_database_test = ""
 chat_release = 0
+
+ping_interval = 12 * 60 #Message itself every 12 minutes to prevent standby
 
 #Read variables from "env.json" if exists
 try:
@@ -204,8 +210,8 @@ def check_in_room(room_name="",id=""):
     if len(room_name) < 36:
         return True
     elif db_connect(psycopg2.sql.SQL('''SELECT * FROM {}
-            WHERE LOWER(room)=%s;''').format(psycopg2.sql.Identifier("contacts"+id)), 
-            (room_name,)
+            WHERE LOWER(room)=%s;''').format(
+                psycopg2.sql.Identifier("contacts"+id)), (room_name,)
     ):
         return True
     else:
@@ -329,8 +335,9 @@ def commands(get):
         if not check_in_room(post,get[1]):
             return "Error: No access to room"
 
-        ls = db_connect(psycopg2.sql.SQL('''SELECT * FROM {} WHERE id=%s;''').format(
-            psycopg2.sql.Identifier(post)), (int(get[4]),))
+        ls = db_connect(
+                psycopg2.sql.SQL('''SELECT * FROM {} WHERE id=%s;''').format(
+                    psycopg2.sql.Identifier(post)), (int(get[4]),))
         msg = ls[1] + "\n" + str(ls[2]) + "\n" + ls[3]
         
         return msg
@@ -338,7 +345,8 @@ def commands(get):
     elif cmd == "user":
         if not validate(get):
             return "Error: Invalid credentials"
-        user = db_connect("SELECT username FROM Users WHERE userid=%s;", (get[3],))
+        user = db_connect("SELECT username FROM Users WHERE userid=%s;", 
+                            (get[3],))
         if user:
             return user[0]
         else:
@@ -577,27 +585,68 @@ db_connect(
 
 #Get data count
 print(db_connect("SELECT count(*) from Users")[0], "users loaded")
-
 print(post_count(), "posts found")
 
 #Create networking socket
 print("Starting up server. Press Ctrl+C to close")
 
+def health_check(connection, request):
+    '''Health check for Render cloud'''
+    #Very likely fails on local testing unless health check explicitly set
+    try:
+        if request.path == "/healthz":
+            return connection.respond(http.HTTPStatus.OK, "OK\n")
+    except Exception as e:
+        print("Health check failed: ",e)
+
+async def keepalive():
+    '''Create a connection periodically to keep server running'''
+    while True:
+        await asyncio.sleep(ping_interval)
+        try:
+            async with connect(f"wss://{host_current}:{port_current}",) as socket:
+                print("\nSent periodic ping")
+                await socket.send("version")
+                await socket.recv()
+        except:
+            try:
+                async with connect(f"ws://{host_current}:{port_current}") as socket:
+                    print("\nSent periodic ping")
+                    await socket.send("version")
+                    await socket.recv()
+            except Exception as e:
+                print("Failed to send keepalive ping: ",e)
+
+
 async def handle(websocket):
+    '''Handle client connections'''
     async for message in websocket:
         get = message.split("\n")
         print("\nConnected",time(),get)
+
         try:
             resp = str(commands(get)).strip()
         except Exception as e:
             print(traceback.format_exc())
             resp = "Server error: " + str(e)
+            
         print("Response",resp)
         await websocket.send(resp)
 
 async def main():
-    async with serve(handle, host_current, port_current):
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
+    async with serve(
+        handle, 
+        host = host_current, 
+        port = port_current, 
+        process_request = health_check
+    ):
+        print("Server started at",time())
         print("WebSocket created, waiting for connections")
-        await asyncio.get_running_loop().create_future()  # run forever
+        asyncio.create_task(keepalive())
+        await stop  # run forever
 
 asyncio.run(main())
