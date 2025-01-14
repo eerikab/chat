@@ -604,10 +604,11 @@ async def keepalive():
     while True:
         await asyncio.sleep(ping_interval)
         try:
-            async with connect(f"wss://{host_current}:{port_current}",) as socket:
-                print("\nSent periodic ping")
-                await socket.send("version")
-                await socket.recv()
+            if release:
+                async with connect("wss://chat-4zh4.onrender.com",) as socket:
+                    print("\nSent periodic ping")
+                    await socket.send("version")
+                    await socket.recv()
         except:
             try:
                 async with connect(f"ws://{host_current}:{port_current}") as socket:
