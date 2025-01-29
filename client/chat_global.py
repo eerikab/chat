@@ -10,7 +10,7 @@ if release:
     HOST, PORT = "wss://chat-4zh4.onrender.com", "" #Server IP for released application
 
 #Versioning
-version = "0.0.2" #App version, increase with each released update
+version = "0.0.3" #App version, increase with each released update
 server_version = ""
 
 #User

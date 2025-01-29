@@ -145,14 +145,25 @@ class client():
         cw.label(self,self.frame_add,text="Direct messages:")
         #self.frame_contacts = cw.frame(self,self.frame_add,expand=1,fill="both",bg="textbox")
         self.frame_contacts = cw.canvas_window(self,self.frame_add)
+        self.contacts_default = self.user_label("No contacts found")
         self.checking = False
+
+    def post_label(self,txt):
+        frame = cw.frame(self,self.posts_frame,fill="x",bg="textbox")
+        cw.comment(self,frame,text=txt,side="left",padx=8)
+        return frame
+    
+    def user_label(self,txt):
+        frame = cw.frame(self,self.frame_contacts,fill="x",bg="textbox")
+        cw.comment(self,frame,text=txt,side="left",padx=8)
+        return frame
 
     def guiset(self):
         csg.guiset(self,self.win)
 
     def switch(self):
         page = self.page.get()
-        self.page_title.set(page)
+        self.set_title(page)
         
         self.label.enable()
         self.label.erase()
@@ -171,7 +182,7 @@ class client():
             if self.friend.get() == "add contacts":
                 self.frame_add.pack(fill="both",expand=1,side="right")
                 self.msg_frame.pack_forget()
-                self.page_title.set("Messages - Add contacts")
+                self.set_title("Messages - Add contacts")
                 self.error_current = self.add_error
                 self.error_current.set("")
             else:
@@ -180,7 +191,7 @@ class client():
                 self.chatname = self.friend.get()
                 self.error_current = self.error
                 self.error_current.set("")
-                self.page_title.set("Messages - " + self.master.get_username(self.chatname))
+                self.set_title("Messages - " + self.master.get_username(self.chatname))
         else:
             self.msg_frame.pack(fill="both",expand=1,side="right")
             self.post_frame.pack_forget()
@@ -189,40 +200,44 @@ class client():
 
         self.master.switch()
 
+    def set_title(self, txt):
+        self.page_title.set(txt)
+        self.win.title("Chat - " +txt)
+
+
 class postbtn():
     def __init__(self,i,master) -> None:
-        text = master.posts[str(i)]["user"] + "     " + master.posts[str(i)]["date"] + "\n"
         count = 0
+        msg = ""
+        
         for line in master.posts[str(i)]["msg"].strip().split("\n"):
             if count < 3:
-                text += "\n" + line
+                msg += "\n" + line
             else: 
                 break
             count += 1
 
-        self.button = cw.button(
+        self.widget = cw.text_button(
                 master.gui, master.gui.posts_frame,
-                text = text,
                 command = self.click,
-                fill = "both",
-                padx=8,
-                pady=8,
-                expand=1,
-                justify="left",
-                anchor="nw",
-                bg="bg"
+                height = count+2,
+                text_user = master.posts[str(i)]["user"],
+                text_date = master.posts[str(i)]["date"] + "     " + str(master.posts[str(i)]["length"]-1) + " replies",
+                msg = msg
             )
         self.i = i
         self.master = master
 
-    def click(self):
+    def click(self,event=""):
         self.master.chatname = "post" + str(self.i)
         self.master.gui.page.set("Post by " + self.master.posts[str(self.i)]["user"])
         self.master.gui.switch()
 
 class contact_btn():
     def __init__(self,i,master) -> None:
-        text = master.get_username(i)
+        user = master.get_username(i)
+        date = ""
+        msg = ""
         
         if i not in master.msgs:
             master.msgs[i] = dict()
@@ -230,7 +245,7 @@ class contact_btn():
         #Get and write the last message of the chat
         num = int(master.request(cmd="num",txt=i))
         if num == 0:
-            text += "\n\nNo messages"
+            msg = "No messages"
         else:
             if str(num) not in master.msgs[i]:
                 req = master.request(cmd="get",txt=i + "\n" + str(num)).split("\n")
@@ -244,24 +259,19 @@ class contact_btn():
                     "msg" : msg
                 }
             md = master.msgs[i][num]
-            text += "     " + md["date"] + "\n\n" + md["msg"]
+            date = md["date"]
 
-        self.button = cw.button(
+        self.widget = cw.text_button(
                 master.gui, master.gui.frame_contacts,
-                text = text,
                 command = self.click,
-                fill = "both",
-                padx=8,
-                pady=8,
-                expand=1,
-                justify="left",
-                anchor="nw",
-                bg="bg"
+                text_user = user,
+                text_date = date,
+                msg = "\n" + msg
             )
         self.i = i
         self.master = master
 
-    def click(self):
+    def click(self, event=""):
         self.master.gui.friend.set(self.i)
         self.master.gui.switch()
         

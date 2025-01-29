@@ -104,7 +104,7 @@ class client():
             return
         
         for i in self.post_btn:
-            i.button.destroy()
+            i.widget.destroy()
         self.post_btn = []
 
         msg_max = count
@@ -116,12 +116,18 @@ class client():
         for i in reversed(range(self.post_min,self.post_max+1)):
             self.post_btn.append( ccg.postbtn(i,self))
 
+        if not self.post_btn:
+            self.post_btn.append( self.gui.post_label("No posts have been made yet"))
+        elif msg_min == 1:
+            self.post_btn.append( self.gui.post_label("End of the post list"))
+
         self.win.widget.after(100,self.gui.posts_frame.post_region)
         self.checking = False
             
     def chkpost(self,msg_min,msg_max):
         if msg_max >= 0:
             for i in range(msg_min,msg_max+1):
+                length = int(self.request("num","post"+str(i)))
                 get = self.request("get","post"+str(i)+"\n1")
                 get = get.split("\n")
                 msg = ""
@@ -133,7 +139,8 @@ class client():
                 md = {
                         "user" : user,
                         "date" : date,
-                        "msg" : msg
+                        "msg" : msg,
+                        "length" : length
                     }
                 self.posts[str(i)] = md
 
@@ -165,33 +172,35 @@ class client():
         
         if count != self.msgs[self.chatname]["max"] and count > 0:
             #Get up to 50 messages at a time
+            self.gui.label.insert("Loading messages\n","Date")
             msg_max = count
             msg_min = count-50
             if msg_min < 1:
                 msg_min = 1
             self.chkmsg(msg_min,msg_max)
 
-        elif self.gui.scrollbar.widget.get()[0] == 0 and self.msgs[self.chatname]["min"] > 0 and not self.just_opened:
+        elif self.gui.scrollbar.widget.get()[0] == 0 and self.msgs[self.chatname]["min"] > 1 and not self.just_opened:
             msg_max = self.msgs[self.chatname]["min"]-1
             msg_min = msg_max-51
             if msg_min < 1:
                 msg_min = 1
             self.chkmsg(msg_min,msg_max)
 
-        elif not self.just_opened or count == 0:
+        elif not self.just_opened:
             self.checking = False
             return
-
         self.just_opened = False
 
-        self.gui.label.enable()
         self.gui.label.erase()
+        if self.msgs[self.chatname]["max"] < 1:
+            self.gui.label.insert("No messages have been sent here yet\n","Date")
+            self.gui.label.disable()
+            return
+        elif self.msgs[self.chatname]["min"] == 1:
+            self.gui.label.insert("This is the start of the chat room\n","Date")
         for i in range(self.msgs[self.chatname]["min"], self.msgs[self.chatname]["max"]+1):
             msg = self.msgs[self.chatname][str(i)]
-
-            self.gui.label.insert("\n"+msg["user"]+"     ","User")
-            self.gui.label.insert(msg["date"]+"\n","Date")
-            self.gui.label.insert(msg["msg"]+"\n")
+            self.gui.label.insert_msg("\n"+msg["user"], msg["date"], msg["msg"]+"\n")
         self.gui.label.disable()
 
         self.checking = False
@@ -242,19 +251,23 @@ class client():
             ls = contacts.split("\n")
             ls.reverse()
             for i in ls:
-                name = self.get_username(i)
-                if name not in self.contact_list and "error:" not in name.lower():
-                    ccg.cw.radio(
-                        self, self.gui.contacts,
-                        padiy = 4,
-                        variable = self.gui.friend,
-                        text = name,
-                        value = i,
-                        width = 16,
-                        command = self.gui.switch
-                    )
-                    ccg.contact_btn(i, self)
-                    self.contact_list.append(name)
+                if i.strip():
+                    name = self.get_username(i)
+                    if name not in self.contact_list and "error:" not in name.lower():
+                        ccg.cw.radio(
+                            self, self.gui.contacts,
+                            padiy = 4,
+                            variable = self.gui.friend,
+                            text = name,
+                            value = i,
+                            width = 16,
+                            command = self.gui.switch
+                        )
+                        ccg.contact_btn(i, self)
+                        self.contact_list.append(name)
+                    if self.gui.contacts_default:
+                        self.gui.contacts_default.destroy()
+                        self.gui.contacts_default = 0
             self.win.widget.after(100, self.gui.frame_contacts.post_region)
 
     def get_username(self,user):
@@ -278,6 +291,7 @@ class client():
                 self.receive()
         else:
             self.receive()
+            self.gui.page.set("Posts")
 
     def post_click(self):
         self.chatname = "post"+str(self.i)

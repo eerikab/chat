@@ -25,7 +25,6 @@ class client():
         self.success = 0
 
         self.win = cw.window(self,"Chat login",size="560x420",minsize=(320,240))
-        #self.win.on_exit(self.win.destroyall)
 
         self.page = cw.stringvar("Login")
 
@@ -55,6 +54,7 @@ class client():
         #Pages
         self.login = login(self)
         self.register = register(self)
+        self.switch()
 
         ch, resp = settings.request("version")
         if ch:
@@ -64,14 +64,16 @@ class client():
         else:
             self.register.error.set("Could not connect to server")
             self.login.error.set("Could not connect to server")
-        
+
     def switch(self):
-        if self.page.get() == "Register":
+        page = self.page.get()
+        if page == "Register":
             self.register.frame.pack()
             self.login.frame.pack_forget()
         else:
             self.login.frame.pack()
             self.register.frame.pack_forget()
+        self.win.title("Chat login - " + page)
 
     def autosubmit(self):
         self.pass_hash = cg.password
@@ -167,10 +169,11 @@ class login():
         global cl
         self.master = master
 
-        #Widgets
         self.frame = cw.frame(self.master,self.master.right,fill="both")
-        cw.label(self.master,self.frame,text="Welcome!",pady=8)
+        self.frame.pack_forget()
 
+        #Widgets
+        cw.label(self.master,self.frame,text="Welcome!",pady=8)
         cw.label(self.master,self.frame,text="Username:")
         self.entry_name = cw.entry(self.master,self.frame)
         self.entry_name.insert(cg.user)
@@ -182,6 +185,8 @@ class login():
         self.error = cw.error(self.master,self.frame)
         self.send = cw.button(self.master,self.frame, text="Log in", command=master.submit, pady=8)
 
+        cw.label_button(self.master, self.frame, text="Web version", url="https://eerikab.github.io/chat/")
+
 class register():
     def __init__(self,master=client) -> None:
         global cl
@@ -192,12 +197,13 @@ class register():
         
         #Widgets
         cw.label(self.master,self.frame,text="Welcome!",pady=8)
-        cw.label(self.master,self.frame,text="Email:")
-        self.entry_email = cw.entry(self.master,self.frame)
-
         cw.label(self.master,self.frame,text="Username:")
         self.entry_name = cw.entry(self.master,self.frame)
-        cw.comment(self.master,self.frame,text="4-32 characters; letters, numbers, spaces, \nunderscores, dashes, periods allowed")
+        cw.comment(self.master,self.frame,text="4-32 characters; letters, numbers, \nunderscores, dashes, periods allowed")
+        
+        cw.label(self.master,self.frame,text="Email:")
+        self.entry_email = cw.entry(self.master,self.frame)
+        cw.comment(self.master,self.frame,text="Valid email format")
 
         cw.label(self.master,self.frame,text="Password:")
         self.entry_pass = cw.entry(self.master,self.frame,show="*")

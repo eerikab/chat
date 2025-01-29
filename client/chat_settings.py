@@ -1,6 +1,5 @@
-'''Common tools functions that can be used by all windows
-Set up data for themes and stufs
-Global variables'''
+'''Common tools functions that can be used by all windows\n
+Set up data for themes and stufs\n'''
 
 import os
 import configparser
@@ -11,6 +10,8 @@ import datetime
 import json
 import asyncio
 from websockets.client import connect
+import webbrowser
+import sys
 
 def reset():
     #Reset all themes
@@ -207,6 +208,12 @@ def ini_to_json():
     config_json = json.dumps(config_dict,indent=4)
     with open(cg.directory+"/config/chat_themes.json","w") as file:
         file.write(config_json)
+
+def url(page):
+    webbrowser.open(page)
+
+def version():
+    return sys.version.split()[0]
     
 
 #Init

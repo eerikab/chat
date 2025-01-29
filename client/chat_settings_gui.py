@@ -1,6 +1,5 @@
 '''Settings window for client app'''
 
-import os
 import chat_settings as settings
 import chat_widgets as cw
 import chat_global as cg
@@ -74,6 +73,7 @@ class guiset():
             self.inloop = 1
             self.themed = 0
 
+            self.switch()
             #self.local_theming()
 
             if __name__ == "__main__":
@@ -81,7 +81,9 @@ class guiset():
     
     def page_theme(self):
         self.frame_theme = cw.frame(self,self.right)
+        self.frame_theme.pack_forget()
         frame = self.frame_theme
+
         cw.label(self,frame,text="Theme:")
         for i in self.themelist:
             name = i["name"]
@@ -109,9 +111,7 @@ class guiset():
         self.check_apply = cw.check(self,frame,text="Apply theming",command=self.local_theming,pady=8,value=cg.apply_theme)
 
         self.field = cw.text(self,frame,width=50,height=3,padx=16,borderwidth=0)
-        self.field.insert("User ","User")
-        self.field.insert(settings.time_format(),"Date")
-        self.field.insert("\nSample message")
+        self.field.insert_msg("User",settings.time_format(), "Sample message")
 
         self.field.disable()
         
@@ -148,7 +148,6 @@ class guiset():
         self.frame_about = cw.frame(self,self.right)
         self.frame_about.pack_forget()
         frame = self.frame_about
-        py_version = sys.version.split()[0]
         cw.label(self,frame,text="About:",padx=16)
         cw.label(self,frame)
         cw.label(self,frame,text="Chat")
@@ -157,7 +156,10 @@ class guiset():
         cw.label(self,frame,text="Built on Python, Tkinter")
         cw.label(self,frame,text="Client version " + cg.version)
         cw.label(self,frame,text="Server version " + cg.server_version)
-        cw.label(self,frame,text="Python version " + py_version)
+        cw.label(self,frame,text="Python version " + settings.version())
+        cw.label(self,frame)
+        cw.label_button(self,frame,text="Web version",url="https://eerikab.github.io/chat/")
+        cw.label_button(self,frame,text="GitHub home page",url="https://github.com/eerikab/chat")
 
     def account_widgets(self):
         frame = self.frame_change
@@ -205,7 +207,7 @@ class guiset():
         self.change_new.uncensor()
 
     def change_password(self):
-        self.label_change_new.set("Change password:")
+        self.label_change_new.set("New password:")
         self.comment_change.set("8-64 characters")
         self.frame_confirm.pack()
         self.change_current = "password"
@@ -213,7 +215,7 @@ class guiset():
         self.change_new.censor()
 
     def change_email(self):
-        self.label_change_new.set("Change email:")
+        self.label_change_new.set("New email:")
         self.comment_change.set("Must be in a valid format")
         self.frame_confirm.pack_forget()
         self.change_current = "email"
@@ -221,11 +223,12 @@ class guiset():
         self.change_new.uncensor()
         
     def switch(self):
-        if self.page.get() == "Account":
+        page = self.page.get()
+        if page == "Account":
             self.frame_theme.pack_forget()
             self.frame_account.pack()
             self.frame_about.pack_forget()
-        elif self.page.get() == "About":
+        elif page == "About":
             self.frame_theme.pack_forget()
             self.frame_account.pack_forget()
             self.frame_about.pack()
@@ -233,6 +236,7 @@ class guiset():
             self.frame_theme.pack()
             self.frame_account.pack_forget()
             self.frame_about.pack_forget()
+        self.win.title("Chat settings - " + page)
 
     def submit(self):
         self.error_account.set("No changes made")
