@@ -1,8 +1,10 @@
 A simple messaging platform, featuring posts and direct messages
 
-Made in Python and basic HTML
+Made for desktop and web with Python and basic HTML
 
 Working title TickChat
+
+Access web edition at https://eerikab.github.io/chat/
 
 ## Setup
 Python 3 is required with Tkinter, Websockets, Psycopg2 modules
