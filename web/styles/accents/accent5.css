@@ -10,6 +10,14 @@ b {
     color: #bc00fa;
 }
 
+a {
+    color: #b400f0;
+}
+
+a:hover {
+    color: #c040ff;
+}
+
 .user {
     color: #ff00ff;
 }

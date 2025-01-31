@@ -1,4 +1,4 @@
-html, body, button, a, input, textarea, .send,
+html, body, button, input, textarea, .send,
 .topbar, .main, .userlist, .send_short,
 .postbtn, .adduser {
     background-color: #333333;
@@ -9,7 +9,7 @@ html, body, button, a, input, textarea, .send,
     color: #909090;
 }
 
-aside, input, a, .account,
+aside, input, .account,
 .btn_inactive, textarea, .list_bottom {
     background-color: #3f3f3f;
 }

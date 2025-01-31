@@ -4,7 +4,7 @@
 const release = 1
 
 //App version, increase with each released update
-const version = "0.0.2"
+const version = "0.0.3"
 
 //Declare variable
 var username;
@@ -144,6 +144,22 @@ function time_format(time)
     let date = new Date(time + " UTC");
     let date_str = date.getDate() + " " + months[date.getMonth()] + " " + date.getFullYear() + " " + date.getHours().toString().padStart(2,"0") + ":" + date.getMinutes().toString().padStart(2,"0");
     return date_str;
+}
+
+function add_text(node, text)
+{  
+    var txt_node = document.createTextNode(text);
+    node.appendChild(txt_node);
+}
+
+function add_node(node, text, html_class="span", add_class="comment")
+{
+    var txt = document.createElement(html_class);
+    var txt_node = document.createTextNode(text);
+    txt.appendChild(txt_node);
+    if (add_class)
+        txt.classList.add(add_class);
+    node.appendChild(txt);
 }
 
 get_userdata();

@@ -5,8 +5,11 @@ const accents = ["","Blue","Green","Orange","Red","Purple"];
 
 const div_theme = document.getElementById("theme");
 const div_accent = document.getElementById("accent");
-
 const check_apply = document.getElementById("apply");
+const account_button = document.getElementById("btn_account");
+
+if (!username)
+    account_button.remove();
 
 var apply = parseInt(localStorage.getItem("apply"));
 

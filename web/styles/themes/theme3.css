@@ -9,8 +9,8 @@ html, body, button, a, input, textarea, .send,
     color: #909090;
 }
 
-aside, input, a, .account,
-.btn_inactive, textarea {
+aside, input, .account,
+.btn_inactive, textarea, .list_bottom {
     background-color: #002078;
 }
 
@@ -19,7 +19,7 @@ aside, input, a, .account,
 }
 
 .msg_background, .chatbox, .text_example, 
-.chatbox_short, .postbox {
+.chatbox_short, .postbox, .userlist_box {
     background-color: #000920;
 }
 

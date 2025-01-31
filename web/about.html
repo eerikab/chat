@@ -16,10 +16,10 @@
 <body>
     <aside>
         <button onclick="location.href='appearance.html';" class="btn_inactive">Appearance</button>
-        <br><button onclick="location.href='account.html';" class="btn_inactive">Account</button>
-        <br><button onclick="location.href='about.html';" class="btn_active">About</button>
+        <button onclick="location.href='account.html';" id="btn_account" class="btn_inactive">Account</button>
+        <button onclick="location.href='about.html';" class="btn_active">About</button>
         <div class="list_bottom">
-            <button onclick="go_back();">Close</button><br><br>
+            <button onclick="go_back();">Back</button><br><br>
         </div>
     </aside>
 
@@ -30,6 +30,8 @@
         <p>Web edition</p>
         <p id="ver_client">Client version 0.0.0</p>
         <p id="ver_server">Server version 0.0.0</p>
+        <br><p><a href="https://github.com/eerikab/chat">GitHub home page</a></p>
+        <p class="comment">For source and desktop downloads</p>
     </div>
 
     <script src="scripts/functions.js"></script>

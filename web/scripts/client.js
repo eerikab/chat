@@ -49,8 +49,13 @@ class postbtn {
                 break;
         }
 
+        var date = time_format(msg[1]);
+        for (i = 0; i < 5; i++)
+            date += String.fromCharCode(160)
+        date += String(msg[3]-1) + " replies"
+
         //Put post content on button
-        writemsg(this.btn,msg[0], time_format(msg[1]), content);
+        writemsg(this.btn, msg[0], date, content);
         postbox.appendChild(this.btn);
 
         this.btn.addEventListener("click",function(){
@@ -72,7 +77,7 @@ class userbtn {
         else
             this.btn.classList.add("btn_inactive");
 
-        this.btn.appendChild(document.createTextNode(users[id]));
+        add_text(this.btn, users[id]);
 
         userlist.prepend(this.btn);
 
@@ -93,7 +98,6 @@ class contact_btn {
         var btn = document.createElement("button");
         btn.classList.add("postbtn");
 
-
         request_user("num",id,function(result)
         {
             var num = parseInt(result)
@@ -105,12 +109,15 @@ class contact_btn {
             else
             {
                 if (!(msgs[id]))
+                {
                     msgs[id] = {};
+                }
 
                 if (num.toString() in msgs[id])
                 {
                     var data = msgs[id][num.toString()];
-                    writemsg(btn,id,time_format(data[1]),"\n"+data[2]);
+                    var msg = data[2].split("\n")[0]
+                    writemsg(btn,id,time_format(data[1]),"\n"+msg);
                     userbox.appendChild(btn);
                 }
                 else
@@ -118,8 +125,15 @@ class contact_btn {
                     request_user("get",id+"\n"+num.toString(),function(result)
                     {
                         var data = result.split("\n");
-                        msgs[id][String(num-1)] = [data[0],data[1], data[2]];
-                        writemsg(btn,id,data[1],"\n"+data[2]);
+                        var msg = "";
+
+                        for (var i = 2; i < data.length; i++)
+                        {
+                            msg += data[i] + "\n";
+                        }
+
+                        msgs[id][String(num)] = [data[0],data[1], msg];
+                        writemsg(btn,id,time_format(data[1]),"\n"+data[2]);
                         userbox.appendChild(btn);
                         save_msgs();
                     });
@@ -165,8 +179,13 @@ function receive_start()
     if (first_load)
     {
         first_load = false;
-        while(chat.firstChild)
-            chat.removeChild(chat.lastChild);
+        if (chat)
+        {
+            while(chat.firstChild)
+                chat.removeChild(chat.lastChild);
+            add_node(chat, "Loading messages...");
+        }
+
 
         if (userlist)
         {
@@ -188,7 +207,8 @@ function receive_start()
         if (chatbox || chatbox_short) {
             //Set page title
             if (room.substring(0,4) == "post")
-                set_title("Post by " + users[posts[parseInt(room.substring(4,room.length))][0]]);
+                set_title("Post by " 
+                    + users[posts[parseInt(room.substring(4,room.length))][0]]);
             if (userlist)
                 set_title("Messages - " + users[room]);
 
@@ -218,16 +238,23 @@ function receive_num(result)
 {
     //Gets the number of messages in room
     num = parseInt(result);
-    if (temp_max >= num) {
+    if (temp_max >= num && num > 0) {
         checking = false;
         return;
     }
     if (!(room in msgs))
+    {
         msgs[room] = {};
+        msgs[room]["max"] = -1;
+        msgs[room]["min"] = -1;
+    }
+    if (!num)
+    {
+        display_messages();
+        return;
+    }    
     temp_max = num;
     temp_min = num-50;
-    if (!num)
-        return;
     if (temp_min < 1)
         temp_min = 1;
     phase = "messages";
@@ -242,6 +269,8 @@ function receive_num(result)
             request_user("get",room + "\n" + String(num),receive_msg);
             break;
         }
+        if (!("max" in msgs[room]) || num > msgs[room]["max"])
+            msgs[room]["max"] = num;
         num -= 1;
     }
     messagebox.value = "";
@@ -311,6 +340,16 @@ function receive_msg(result)
             }
             num -= 1;
         }
+        
+        num = posts["min"];
+        while(num <= posts["max"]){
+            if (posts[String(num)].length === 3){
+                request_user("num","post" + String(num), post_length);
+                return;
+            }
+            num += 1;
+        }
+
         get_user();
     }
     else
@@ -334,6 +373,23 @@ function receive_msg(result)
     }
 }
 
+function post_length(result)
+{
+    var data = parseInt(result);
+    
+    posts[String(num)].push(data);
+
+    num += 1;
+    while(num <= posts["max"]){
+        if (posts[String(num)].length === 3){
+            request_user("num","post" + String(num), post_length);
+            return;
+        }
+        num += 1;
+    }
+    get_user();
+}
+
 //Display messages
 function display_messages()
 {
@@ -352,13 +408,24 @@ function display_messages()
 
     while(chat.firstChild)
         chat.removeChild(chat.lastChild);
-
     console.log(Object.entries(msgs));
 
     //Write out messages to chatbox
     num = msgs[room]["min"];
+    if (msgs[room]["max"] < 1)
+    {
+        add_node(chat, "No messages have been sent here yet");
+        checking = false;
+        return;
+    }    
+    if (num == 1)
+    {
+        add_node(chat, "This is the start of the chat room");
+        linebreak(chat);
+        linebreak(chat);
+    }    
     var msg = "";
-    while (num <= msgs[room]["max"])
+    while (num <= msgs[room]["max"] && num > 0)
     {
         msg = msgs[room][String(num)];
         writemsg(chat,msg[0], time_format(msg[1]), msg[2]);
@@ -408,6 +475,12 @@ function display_posts()
     //Write out messages to chatbox
     var num = posts["max"];
     console.log(posts);
+    if (num <= 1)
+    {
+        add_node(postbox, String.fromCharCode(160) 
+            + "No posts have been found yet");
+        return;
+    }    
     while (num >= posts["min"])
     {
         new postbtn(num);
@@ -415,6 +488,13 @@ function display_posts()
     }
     linebreak(postbox);
     linebreak(postbox);
+    if (posts["min"] === 1)
+    {
+        add_node(postbox, String.fromCharCode(160) + " End of the post list");
+        linebreak(postbox);
+        linebreak(postbox);
+    }
+
 
     save_msgs();
     checking = false;
@@ -457,38 +537,29 @@ function linebreak(node)
 {
     br = document.createElement("br");
     node.appendChild(br);
+
 }
 
 function writemsg(master,user,date,message)
 {
     //Writes out the message in correct format
     //User
-    var txt = document.createElement("b");
-    var txt_node = document.createTextNode(users[user]);
-    txt.appendChild(txt_node)
-    txt.classList.add("user");
-    master.appendChild(txt);
+    add_node(master, users[user], "b", "user");
 
     //Spaces between username and date
     for(var i = 0; i < 5; i++)
     {
-        var space = document.createTextNode(String.fromCharCode(160));
-        master.appendChild(space);
+        add_text(master, String.fromCharCode(160));
     }
 
     //Date
-    txt = document.createElement("span");
-    txt_node = document.createTextNode(""+date);
-    txt.appendChild(txt_node);
-    txt.classList.add("comment");
-    master.appendChild(txt);
+    add_node(master, date);
 
     //Message
     var msg_split = message.split("\n");
     msg_split.forEach(function(value){
         linebreak(master)
-        txt_node = document.createTextNode(value);
-        master.appendChild(txt_node);
+        add_text(master, value);
     })
 }
 
@@ -630,7 +701,7 @@ function logout()
 
 function set_title(text)
 {
-    document.title = text;
+    document.title = "Chat - " + text;
     title_label.textContent = text;
 }
 
