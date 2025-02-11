@@ -20,7 +20,7 @@ import http
 import signal
 
 '''Version'''
-version = "0.0.2" #Version of server program, increase it with each update
+version = "0.1.0a1" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -112,10 +112,33 @@ print("Server:", host_current, port_current)
 print("Database:", db_address)
 
 #Data directories
+#Deprecated by use of external postgres database
 dir_data = os.path.dirname(__file__)+"/data/"
 #Why should the folder already existing cause an error by default?
 os.makedirs(dir_data, exist_ok=True) 
 dir_db = dir_data + "data.db"
+
+#Database connection
+class db_connection():
+    '''Database connection for psycopg2'''
+
+    def connect(self):
+        self.conn = psycopg2.connect(db_address)
+        self.cursor = self.conn.cursor()
+
+    def execute(self, statement="", data=()):
+        self.cursor.execute(statement, data)
+        try:
+            return self.cursor.fetchall()
+        except:
+            return ()
+        
+    def close(self):
+        self.conn.commit()
+        self.cursor.close()
+        self.conn.close()
+
+db = db_connection()
 
 #Functions
 def time():
@@ -150,13 +173,7 @@ def db_connect(statement="", data=()):
     '''Communicate with SQL database
     Uses PostgreSQL'''
     try:
-        with psycopg2.connect(db_address) as conn:
-            cursor = conn.cursor()
-            cursor.execute(statement, data)
-            try:
-                return cursor.fetchone()
-            except:
-                return ()
+        return db.execute(statement, data)
             
     except Exception as e:
         print(traceback.format_exc())
@@ -169,7 +186,7 @@ def validate(get):
         user = get[1]
         password = get[2]
         row = db_connect("SELECT password FROM USERS WHERE userid=%s;", (user,))
-        if row[0] == hash_password(user,password):
+        if row[0][0] == hash_password(user,password):
             return True
         else:
             return False
@@ -183,7 +200,7 @@ def user_exists(name="",key="username"):
                     psycopg2.sql.Identifier(key)
                 ), (name.lower(),))
     if user:
-        return user[0]
+        return user[0][0]
     else:
         return ""
 
@@ -221,7 +238,7 @@ def table_exists(table):
     '''Check if table exists in database'''
     var = db_connect('''SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_name = %s);''', (table,))
+        WHERE table_name = %s);''', (table,))[0][0]
     return var == "True"
     
 def create_chat_table(room):
@@ -240,7 +257,7 @@ def create_chat_table(room):
 
 def post_count():
     '''Get the amount of posts sent'''
-    return db_connect("SELECT COUNT(*) FROM Posts")[0]
+    return db_connect("SELECT COUNT(*) FROM Posts")[0][0]
 
 
 # RESPONSES
@@ -273,7 +290,14 @@ def commands(get):
                     psycopg2.sql.Identifier(post.lower())), 
                 (user, date, msg))
         if sql:
-            return sql[0]
+            return sql[0][0]
+        
+        if "post" in post.lower():
+            length = db_connect(psycopg2.sql.SQL('''SELECT COUNT(*) FROM {};''').format(
+                        psycopg2.sql.Identifier(post.lower())))[0][0]
+            sql = db_connect('''UPDATE Posts SET length=%s WHERE room=%s;''', (length, post))
+            if sql:
+                return sql[0][0]
 
         return "OK"
 
@@ -295,17 +319,22 @@ def commands(get):
         table = "post" + str(post_count() + 1)
         sql = create_chat_table(table)
         if sql:
-            return sql[0]
+            return sql[0][0]
         
         sql = db_connect(psycopg2.sql.SQL('''INSERT INTO {} 
                     (username, date_created, msg) VALUES(%s,%s,%s);''').format(
                         psycopg2.sql.Identifier(table)), (user, date, msg))
         if sql:
-            return sql[0]
+            return sql[0][0]
         
-        sql = db_connect('''INSERT INTO Posts(room) VALUES(%s);''', (table,))
+        msg_short = ""
+        for i in get[3:6]:
+            msg_short += i + "\n"
+        
+        sql = db_connect('''INSERT INTO Posts(room, username, date_created, msg, length) 
+                            VALUES(%s,%s,%s,%s,1);''', (table, user, date, msg_short))
         if sql:
-            return sql[0]
+            return sql[0][0]
         
         return "OK"
 
@@ -319,7 +348,7 @@ def commands(get):
             return "Error: No access to room"
         
         return db_connect(psycopg2.sql.SQL("SELECT COUNT(*) FROM {};").format(
-                psycopg2.sql.Identifier(post)))[0]
+                psycopg2.sql.Identifier(post)))[0][0]
     
     elif cmd == "postnum":
         if not validate(get):
@@ -336,11 +365,29 @@ def commands(get):
             return "Error: No access to room"
 
         ls = db_connect(
-                psycopg2.sql.SQL('''SELECT * FROM {} WHERE id=%s;''').format(
-                    psycopg2.sql.Identifier(post)), (int(get[4]),))
-        msg = ls[1] + "\n" + str(ls[2]) + "\n" + ls[3]
+                psycopg2.sql.SQL('''SELECT * FROM {} WHERE id>=%s AND id<=%s;''').format(
+                    psycopg2.sql.Identifier(post)), (int(get[4]), int(get[5])))
         
-        return msg
+        return json.dumps(ls, default=str)
+        
+        '''msg = ""
+        for i in ls:
+            msg += "[num]" + str(i[0]) + "\n"
+            msg += "[usr]" + i[1] + "\n"
+            msg += "[dat]" + str(i[2]) + "\n"
+            msg += "[msg]" + i[3] + "\n"
+        
+        return msg'''
+
+    elif cmd == "getposts":
+        if not validate(get):
+            return "Error: Invalid credentials"
+
+        #post = get_directory(get[3], get[1])
+
+        ls = db_connect('''SELECT * FROM Posts WHERE id>=%s AND id<=%s;''', (int(get[3]), int(get[4])))
+        
+        return json.dumps(ls, default=str)
     
     elif cmd == "user":
         if not validate(get):
@@ -348,7 +395,7 @@ def commands(get):
         user = db_connect("SELECT username FROM Users WHERE userid=%s;", 
                             (get[3],))
         if user:
-            return user[0]
+            return user[0][0]
         else:
             return "[user " + get[3] + "]"
 
@@ -364,9 +411,9 @@ def commands(get):
             if db_connect(
                 '''SELECT userid FROM Users
                 WHERE (username=%s OR email=%s) AND password=%s;''', 
-                (user, hashing(user), hash_password(userid[0],password))
-            ) or "error" in userid[0]:
-                return userid[0]
+                (user, hashing(user), hash_password(userid[0][0], password))
+            ) or "error" in userid[0][0]:
+                return userid[0][0]
         
         return "Error: Invalid username or password"
 
@@ -401,7 +448,7 @@ def commands(get):
             VALUES(%s,%s,%s,%s,%s);''', (userid, user, pass_hash, email, time())
         )
         if sql:
-            return sql[0]
+            return sql[0][0]
 
         sql = db_connect(
             psycopg2.sql.SQL('''CREATE TABLE IF NOT EXISTS {} (
@@ -413,7 +460,7 @@ def commands(get):
             );''').format(psycopg2.sql.Identifier("contacts" + userid))
         )
         if sql:
-            return sql[0]
+            return sql[0][0]
 
         return userid
     
@@ -447,7 +494,7 @@ def commands(get):
             sql = db_connect('''UPDATE Users SET username=%s, password=%s
                     WHERE userid=%s;''', (new, hash_password(userid,pw), userid))
             if sql:
-                return sql[0]
+                return sql[0][0]
 
         elif mode == "password":
             new = hash_password(userid,new_raw)
@@ -458,7 +505,7 @@ def commands(get):
             sql = db_connect('''UPDATE Users SET password=%s 
                                 WHERE userid=%s;''', (new, userid))
             if sql:
-                return sql[0]
+                return sql[0][0]
 
         elif mode == "email":
             new = hashing(new_raw)
@@ -471,14 +518,14 @@ def commands(get):
             sql = db_connect('''UPDATE Users SET email=%s
                                 WHERE userid=%s;''', (new, userid))
             if sql:
-                return sql[0]
+                return sql[0][0]
 
         else:
             return "Error: Invalid type of data"
 
         return "OK"
     
-    elif cmd == "add_contact":
+    elif cmd == "addcontact":
         if not validate(get):
             return "Error: Invalid credentials"
         
@@ -501,7 +548,7 @@ def commands(get):
         
         sql = create_chat_table(chat_path)
         if sql:
-            return sql[0]
+            return sql[0][0]
 
         #Add users to list
         sql = db_connect(
@@ -511,7 +558,7 @@ def commands(get):
                 (other_id, chat_path, date_created)
         )
         if sql:
-            return sql[0]
+            return sql[0][0]
 
         sql = db_connect(
             psycopg2.sql.SQL('''INSERT INTO {} (contact,room,date_created)
@@ -520,7 +567,7 @@ def commands(get):
                 (user, chat_path, date_created)
         )
         if sql:
-            return sql[0]
+            return sql[0][0]
 
         return "Contact added"
     
@@ -531,19 +578,12 @@ def commands(get):
         user = get[1]
         text = ""
 
-        length = int(db_connect(psycopg2.sql.SQL(
-            '''SELECT COUNT(*) FROM {};''').format(
-                psycopg2.sql.Identifier("contacts"+user)))[0])
-        
-        for i in range(1,length+1):
-            contact = db_connect( psycopg2.sql.SQL(
-                '''SELECT contact FROM {} WHERE id=%s;''').format(
-                    psycopg2.sql.Identifier("contacts"+user)), (i,))
+        contact = db_connect( psycopg2.sql.SQL(
+            '''SELECT contact FROM {};''').format(
+                psycopg2.sql.Identifier("contacts"+user)))
             
-            if contact:
-                text += contact[0] + "\n"
-            else:
-                break
+        for i in contact:
+            text += i[0] + "\n"
 
         return text.strip()
     
@@ -555,6 +595,7 @@ def commands(get):
 
 #Initialization
 
+db.connect()
 #Create user data
 #db_connect('''DROP TABLE IF EXISTS Posts''')
 
@@ -579,13 +620,19 @@ db_connect(
         username VARCHAR(32),
         date_created TIMESTAMP,
         msg VARCHAR(500),
-        status VARCHAR(10)
+        status VARCHAR(10),
+        length INTEGER
     );'''
 )
 
+#Length column wasn't there at first
+db_connect('''ALTER TABLE Posts ADD COLUMN IF NOT EXISTS length INTEGER;''')
+
 #Get data count
-print(db_connect("SELECT count(*) from Users")[0], "users loaded")
+print(db_connect("SELECT count(*) from Users")[0][0], "users loaded")
 print(post_count(), "posts found")
+
+db.close()
 
 #Create networking socket
 print("Starting up server. Press Ctrl+C to close")
@@ -624,13 +671,15 @@ async def handle(websocket):
     async for message in websocket:
         get = message.split("\n")
         print("\nConnected",time(),get)
+        db.connect() #Open database connection
 
         try:
             resp = str(commands(get)).strip()
         except Exception as e:
             print(traceback.format_exc())
             resp = "Server error: " + str(e)
-            
+        
+        db.close()
         print("Response",resp)
         await websocket.send(resp)
 

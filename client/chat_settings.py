@@ -209,6 +209,9 @@ def ini_to_json():
     with open(cg.directory+"/config/chat_themes.json","w") as file:
         file.write(config_json)
 
+def json_decode(string):
+    return json.loads(string)
+
 def url(page):
     webbrowser.open(page)
 

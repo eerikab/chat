@@ -1,16 +1,8 @@
 '''Background logic behind the main window for chatting rooms and messages'''
 
 import chat_settings as settings
-import os
-import configparser
 import chat_global as cg
 import chat_client_gui as ccg
-
-delay = 2000
-run = 1
-directory = os.path.dirname(__file__)
-save = directory+"/chat_settings.txt"
-cachedir = directory+"/cache/"
 
 class client():
     def __init__(self,master) -> None:
@@ -37,8 +29,8 @@ class client():
         self.gui = ccg.client(self)
         self.win = self.gui.win
         self.get_contacts()
-        self.win.widget.after(delay,self.update)
-        self.gui.switch()
+        #self.win.widget.after(delay,self.update)
+        self.win.widget.after(100, self.gui.switch)
 
         '''#Load cache
         os.makedirs(directory+"/cache",exist_ok=True)
@@ -114,6 +106,8 @@ class client():
         self.chkpost(msg_min,msg_max)
 
         for i in reversed(range(self.post_min,self.post_max+1)):
+            if i < 1:
+                break
             self.post_btn.append( ccg.postbtn(i,self))
 
         if not self.post_btn:
@@ -123,31 +117,24 @@ class client():
 
         self.win.widget.after(100,self.gui.posts_frame.post_region)
         self.checking = False
-            
-    def chkpost(self,msg_min,msg_max):
-        if msg_max >= 0:
-            for i in range(msg_min,msg_max+1):
-                length = int(self.request("num","post"+str(i)))
-                get = self.request("get","post"+str(i)+"\n1")
-                get = get.split("\n")
-                msg = ""
-                for j in get[2:]:
-                    msg += j+"\n"
-                msg = msg.strip()
-                user = self.get_username(get[0])
-                date = settings.time_format(get[1])
-                md = {
-                        "user" : user,
-                        "date" : date,
-                        "msg" : msg,
-                        "length" : length
-                    }
-                self.posts[str(i)] = md
 
-                if i > self.post_max:
-                    self.post_max = i
-                if i < self.post_min or self.post_min == -1:
-                    self.post_min = i
+    def chkpost(self,msg_min,msg_max):
+        if msg_max >= 1:
+            get = self.request("getposts",str(msg_min)+"\n"+str(msg_max))
+            msgs = settings.json_decode(get)
+
+            for i in msgs:
+                self.posts[str(i[0])] = {
+                    "user" : self.get_username(i[2]),
+                    "date" : settings.time_format(i[3]),
+                    "msg" : i[4].strip(),
+                    "length" : i[6]
+                }
+
+            if msg_max > self.post_max:
+                self.post_max = msg_max
+            if msg_min < self.post_min or self.post_min == -1:
+                self.post_min = msg_min
 
     def receive(self):
         if self.checking:
@@ -181,7 +168,7 @@ class client():
 
         elif self.gui.scrollbar.widget.get()[0] == 0 and self.msgs[self.chatname]["min"] > 1 and not self.just_opened:
             msg_max = self.msgs[self.chatname]["min"]-1
-            msg_min = msg_max-51
+            msg_min = msg_max-50
             if msg_min < 1:
                 msg_min = 1
             self.chkmsg(msg_min,msg_max)
@@ -206,44 +193,34 @@ class client():
         self.checking = False
 
     def chkmsg(self,msg_min,msg_max):
-        with open(cachedir+"main.txt","a") as file:
-            config = configparser.ConfigParser()
-            i = msg_max
-            while i >= msg_min:
-                sect = str(i)
-                try:
-                    msg = self.msgs[self.chatname][sect]
-                except Exception as e:
-                    print(str(e))
-                    get = self.request("get",self.chatname +  "\n" + str(i))
-                    get = get.split("\n")
-                    msg = ""
-                    for j in get[2:]:
-                        msg += j+"\n"
-                    msg = msg.strip()
-                    user = self.get_username(get[0])
-                    date = settings.time_format(get[1])
-                    md = {
-                        "user" : user,
-                        "date" : date,
-                        "msg" : msg
-                    }
-                    self.msgs[self.chatname][sect] = md
+        i = msg_max
+        to_add = []
+        while i >= msg_min:
+            sect = str(i)
+            try:
+                self.msgs[self.chatname][sect]
+            except Exception as e:
+                to_add.append(i)
+            i -= 1
+            
+        get = self.request("get", self.chatname +  "\n" + str(to_add[-1]) + "\n" + str(to_add[0]))
+        msgs = settings.json_decode(get)
+        for i in msgs:
+            self.msgs[self.chatname][str(i[0])] = {
+                "user" : self.get_username(i[1]),
+                "date" : settings.time_format(i[2]),
+                "msg" : i[3].strip(),
+            }
 
-                    #config["msg"+sect] = md
-                if not "max" in self.msgs[self.chatname] or i > self.msgs[self.chatname]["max"]:
-                    self.msgs[self.chatname]["max"] = i
-                if not "min" in self.msgs[self.chatname] or self.msgs[self.chatname]["min"] == -1 or i < self.msgs[self.chatname]["min"]:
-                    self.msgs[self.chatname]["min"] = i
-
-                i -= 1
-
-            #config.write(file)
+        if not "max" in self.msgs[self.chatname] or to_add[0] > self.msgs[self.chatname]["max"]:
+            self.msgs[self.chatname]["max"] = to_add[0]
+        if not "min" in self.msgs[self.chatname] or self.msgs[self.chatname]["min"] == -1 or to_add[-1] < self.msgs[self.chatname]["min"]:
+            self.msgs[self.chatname]["min"] = to_add[-1]
 
     def update(self):
         if self.keep_updating and not self.checking:
             self.receive()
-        self.win.widget.after(delay,self.update)
+        #self.win.widget.after(delay,self.update)
 
     def get_contacts(self):
         contacts = self.request("contacts")
@@ -313,7 +290,7 @@ class client():
             self.gui.add_error.set("Please write a user's name first")
             return
         
-        resp = self.request("add_contact", self.gui.add_name.get())
+        self.request("addcontact", self.gui.add_name.get())
         self.get_contacts()
 
 def main(master):
