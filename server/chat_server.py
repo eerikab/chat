@@ -11,6 +11,7 @@ import sys
 import asyncio
 import psycopg2.sql
 from websockets.server import serve
+from websockets.server import broadcast
 from websockets.client import connect
 #import sqlite3
 import traceback
@@ -20,7 +21,7 @@ import http
 import signal
 
 '''Version'''
-version = "0.1.0a1" #Version of server program, increase it with each update
+version = "0.1.0a2" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -139,6 +140,7 @@ class db_connection():
         self.conn.close()
 
 db = db_connection()
+open_connections = []
 
 #Functions
 def time():
@@ -292,14 +294,14 @@ def commands(get):
         if sql:
             return sql[0][0]
         
+        length = db_connect(psycopg2.sql.SQL('''SELECT COUNT(*) FROM {};''').format(
+                    psycopg2.sql.Identifier(post.lower())))[0][0]
         if "post" in post.lower():
-            length = db_connect(psycopg2.sql.SQL('''SELECT COUNT(*) FROM {};''').format(
-                        psycopg2.sql.Identifier(post.lower())))[0][0]
             sql = db_connect('''UPDATE Posts SET length=%s WHERE room=%s;''', (length, post))
             if sql:
                 return sql[0][0]
 
-        return "OK"
+        return f"update\n{post}\n{length}\n{user}\n{date}\n{msg}"
 
     elif cmd == "post":
         user = get[1]
@@ -589,6 +591,9 @@ def commands(get):
     
     elif cmd == "version":
         return version
+    
+    elif cmd == "broadcast":
+        return "OK"
 
     return "Error: Invalid function " + str(cmd)
 
@@ -665,7 +670,6 @@ async def keepalive():
             except Exception as e:
                 print("Failed to send keepalive ping: ",e)
 
-
 async def handle(websocket):
     '''Handle client connections'''
     async for message in websocket:
@@ -682,6 +686,14 @@ async def handle(websocket):
         db.close()
         print("Response",resp)
         await websocket.send(resp)
+
+        #Add to broadcast list
+        if get[0] == "broadcast":
+            open_connections.append(websocket)
+        #If message posted, broadcast to everyone
+        if get[0] == "message":
+            broadcast(open_connections, resp)
+        print(open_connections)
 
 async def main():
     loop = asyncio.get_running_loop()

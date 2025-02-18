@@ -3,6 +3,8 @@
 import chat_settings as settings
 import chat_global as cg
 import chat_client_gui as ccg
+import asyncio
+import threading
 
 class client():
     def __init__(self,master) -> None:
@@ -31,6 +33,10 @@ class client():
         self.get_contacts()
         #self.win.widget.after(delay,self.update)
         self.win.widget.after(100, self.gui.switch)
+
+        #asyncio.run(settings.broadcast_start(self.broadcast))
+        #settings.broadcast_function = self.broadcast
+        settings.broadcast_start(self.broadcast)
 
         '''#Load cache
         os.makedirs(directory+"/cache",exist_ok=True)
@@ -71,9 +77,8 @@ class client():
         self.gui.error_current.set("")
         send = self.gui.msg_field.get().strip()
         if send != "":
-            if self.request("message",self.chatname+"\n"+send) == "OK":
+            if self.request("message",self.chatname+"\n"+send).split("\n")[0] == "update":
                 self.gui.msg_field.erase()
-                self.receive()
     
     def createpost(self):
         self.gui.error_current.set("")
@@ -173,15 +178,16 @@ class client():
                 msg_min = 1
             self.chkmsg(msg_min,msg_max)
 
-        elif not self.just_opened:
+        '''elif not self.just_opened:
             self.checking = False
-            return
+            return'''
         self.just_opened = False
 
         self.gui.label.erase()
         if self.msgs[self.chatname]["max"] < 1:
             self.gui.label.insert("No messages have been sent here yet\n","Date")
             self.gui.label.disable()
+            self.checking = False
             return
         elif self.msgs[self.chatname]["min"] == 1:
             self.gui.label.insert("This is the start of the chat room\n","Date")
@@ -202,20 +208,44 @@ class client():
             except Exception as e:
                 to_add.append(i)
             i -= 1
-            
-        get = self.request("get", self.chatname +  "\n" + str(to_add[-1]) + "\n" + str(to_add[0]))
-        msgs = settings.json_decode(get)
-        for i in msgs:
-            self.msgs[self.chatname][str(i[0])] = {
-                "user" : self.get_username(i[1]),
-                "date" : settings.time_format(i[2]),
-                "msg" : i[3].strip(),
+        
+        if to_add:
+            get = self.request("get", self.chatname +  "\n" + str(to_add[-1]) + "\n" + str(to_add[0]))
+            msgs = settings.json_decode(get)
+            for i in msgs:
+                self.msgs[self.chatname][str(i[0])] = {
+                    "user" : self.get_username(i[1]),
+                    "date" : settings.time_format(i[2]),
+                    "msg" : i[3].strip(),
+                }
+
+            if not "max" in self.msgs[self.chatname] or to_add[0] > self.msgs[self.chatname]["max"]:
+                self.msgs[self.chatname]["max"] = to_add[0]
+            if not "min" in self.msgs[self.chatname] or self.msgs[self.chatname]["min"] == -1 or to_add[-1] < self.msgs[self.chatname]["min"]:
+                self.msgs[self.chatname]["min"] = to_add[-1]
+
+    def broadcast(self, resp):
+        resp = resp.split("\n")
+        print("broadcast function", resp)
+        print(resp[1],self.chatname)
+        if "room" in resp[1] and self.id_to_room(self.chatname) == resp[1]:
+            resp[1] = self.chatname
+        if resp[0] == "update" and resp[1] in self.msgs:
+            print("broadcast update")
+            '''self.msgs[resp[1]][resp[2]] = {
+                "user" : self.get_username(resp[3]),
+                "date" : settings.time_format(resp[4]),
+                "msg" : resp[5].strip(),
             }
 
-        if not "max" in self.msgs[self.chatname] or to_add[0] > self.msgs[self.chatname]["max"]:
-            self.msgs[self.chatname]["max"] = to_add[0]
-        if not "min" in self.msgs[self.chatname] or self.msgs[self.chatname]["min"] == -1 or to_add[-1] < self.msgs[self.chatname]["min"]:
-            self.msgs[self.chatname]["min"] = to_add[-1]
+            if not "max" in self.msgs[self.chatname] or int(resp[1]) > self.msgs[self.chatname]["max"]:
+                self.msgs[self.chatname]["max"] = int(resp[1])
+            if not "min" in self.msgs[self.chatname] or self.msgs[self.chatname]["min"] == -1 or int(resp[1]) < self.msgs[self.chatname]["min"]:
+                self.msgs[self.chatname]["min"] = int(resp[1])'''
+
+            if resp[1] == self.chatname:
+                print("broadcast update in chat")
+                self.win.widget.after(0,self.receive)
 
     def update(self):
         if self.keep_updating and not self.checking:
@@ -293,7 +323,29 @@ class client():
         self.request("addcontact", self.gui.add_name.get())
         self.get_contacts()
 
+    def id_to_room(self, id):
+        #Direct message names are composed of both user IDs, smaller first
+        #Here, userid is caller and file is callee
+        if int(cg.userid) < int(id):
+            return "room" + cg.userid + id
+        else:
+            return "room" + id + cg.userid
+
+def start_client(master):
+    client(master)
+
+async def setup(master):
+    start_client(master)
+    await asyncio.create_task(settings.broadcast())
+
 def main(master):
+    #asyncio.run(setup(master))
+    '''t1 = threading.Thread(target=client, args=(master,))
+    t2 = threading.Thread(target=settings.broadcast)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()'''
     client(master)
 
 if __name__ == "__main__": print("Please run the program through chat_main.py")
