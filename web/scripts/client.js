@@ -19,6 +19,7 @@ let phase = "contacts";
 let first_load = true;
 let friend_used = [];
 let checking = false;
+let delay = 600000;
 sessionStorage.setItem("prevpage",location.href);
 
 if (!username)
@@ -213,7 +214,7 @@ function receive_start()
                 set_title("Messages - " + users[room]);
 
             //Check for new messages periodically
-            window.setInterval(refresh,2000);
+            //window.setInterval(refresh, delay);
         }
     
         if (postbox)
@@ -253,6 +254,8 @@ function receive_num(result)
         display_messages();
         return;
     }    
+
+    let to_add = [];
     temp_max = num;
     temp_min = num-50;
     if (temp_min < 1)
@@ -263,22 +266,26 @@ function receive_num(result)
         msgs[room]["min"] = num; 
     }
 
-    while (num >= temp_min) {
+    while (num >= temp_min) 
+    {
         if (!(String(num) in msgs[room]))
         {
-            request_user("get",room + "\n" + String(num),receive_msg);
-            break;
+            to_add.push(num);
         }
-        if (!("max" in msgs[room]) || num > msgs[room]["max"])
-            msgs[room]["max"] = num;
         num -= 1;
     }
     messagebox.value = "";
 
-    if (num < temp_min)
+    if (to_add.length)
     {
-        display_messages();
+        request_user(
+            "get", 
+            room + "\n" + String(to_add.at(-1)) + "\n" + String(to_add[0]),
+            receive_msg
+        );
     }
+    else 
+        display_messages();
 }
 
 function post_num(result)
@@ -287,89 +294,80 @@ function post_num(result)
     num = parseInt(result);
     if (!num)
         return;
+    let to_add = [];
     temp_max = num;
     temp_min = num-50;
     room = "post";
     phase = "posts";
     if (temp_min < 1)
         temp_min = 1;
-    while (num >= temp_min){
+    while (num >= temp_min)
+    {
         if (!(String(num) in posts))
         {
-            request_user("get","post" + String(num) + "\n1",receive_msg);
-            break;
+            to_add.push(num);
         }
         num -= 1;
     }
 
-    if (num < temp_min)
-    {
+    if (to_add.length)
+        request_user(
+            "getposts",
+            String(to_add.at(-1)) + "\n" + String(to_add[0]),
+            receive_msg
+        );
+    else
         display_posts();
-    }
 }
 
 function receive_msg(result)
 {
-    var data = result.split("\n");
-    console.log(data)
-
-    var user = data[0];
-    if (!(user in users_raw))
-        users_raw.push(user);
-
-    var date = data[1];
-    var msg = "";
-    for (var i = 2; i < data.length; i++)
-    {
-        msg += data[i]+"\n";
-    }
+    var data = JSON.parse(result);
+    console.log(data);
 
     if (postbox)
     {
-        posts[String(num)] = [user, date, msg];
-        if (!("max" in posts) || num > posts["max"])
-            posts["max"] = num;
-        if (!("min" in posts) || num < posts["min"])
-            posts["min"] = num;
+        for (i = 0; i < data.length; i++)
+        {
+            console.log("destroy u");
+            var user = data[i][2];
+            if (!(user in users_raw))
+                users_raw.push(user);
 
-        num -= 1;
-        while(num >= temp_min){
-            if (!(String(num) in posts)){
-                request_user("get","post" + String(num) + "\n1",receive_msg);
-                return;
-            }
-            num -= 1;
-        }
-        
-        num = posts["min"];
-        while(num <= posts["max"]){
-            if (posts[String(num)].length === 3){
-                request_user("num","post" + String(num), post_length);
-                return;
-            }
-            num += 1;
-        }
+            var date = data[i][3];
+            var msg = data[i][4];
+            var length = data[i][6];
+            num = data[i][0];
 
-        get_user();
+            posts[String(num)] = [user, date, msg, length];
+            if (!("max" in posts) || num > posts["max"])
+                posts["max"] = num;
+            if (!("min" in posts) || num < posts["min"])
+                posts["min"] = num;
+            get_user();
+        }
     }
     else
     {
-        msgs[room][String(num)] = [user, date, msg];
-        if (!("max" in msgs[room]) || num > msgs[room]["max"])
-            msgs[room]["max"] = num;
-        if (!("min" in msgs[room]) || num < msgs[room]["min"])
-            msgs[room]["min"] = num;
-        
-        num -= 1;
-        while (num >= temp_min){
-            if (!(String(num) in msgs[room])){
-                request_user("get",room + "\n" + String(num),receive_msg);
-                return;
-            }
-            num -= 1;
-        }
-        get_user();
+        for (i = 0; i < data.length; i++)
+        {
+            var user = data[i][1];
+            if (!(user in users_raw))
+                users_raw.push(user);
 
+            var date = data[i][2];
+            var msg = data[i][3];
+            num = data[i][0];
+
+            msgs[room][String(data[i][0])] = [
+                user, date, msg
+            ];
+            if (!("max" in msgs[room]) || num > msgs[room]["max"])
+                msgs[room]["max"] = num;
+            if (!("min" in msgs[room]) || num < msgs[room]["min"])
+                msgs[room]["min"] = num;
+            get_user();
+        }
     }
 }
 
@@ -429,7 +427,8 @@ function display_messages()
     {
         msg = msgs[room][String(num)];
         writemsg(chat,msg[0], time_format(msg[1]), msg[2]);
-        linebreak(chat)
+        linebreak(chat);
+        linebreak(chat);
         num += 1;
     }
 
@@ -440,31 +439,7 @@ function display_messages()
 }
 
 function refresh()
-{
-    //Check for new messages unless already checking
-    if (checking)
-        return;
-    checking = true;
-
-    if (window.scrollY === 0 && [room] in msgs && msgs[room]["min"] > 1)
-    {
-        //Gets the number of messages in room
-        num = msgs[room]["min"];
-        temp_max = num;
-        temp_min = num-50;
-        if (!num)
-            return;
-        if (temp_min < 1)
-            temp_min = 1;
-        phase = "messages";
-
-        request_user("get",room + "\n" + String(num),receive_msg);
-    }
-    else
-    {
-        request_user("num",room,receive_num);
-    }
-        
+{       
 }
 
 function display_posts()
@@ -475,7 +450,7 @@ function display_posts()
     //Write out messages to chatbox
     var num = posts["max"];
     console.log(posts);
-    if (num <= 1)
+    if (num < 1)
     {
         add_node(postbox, String.fromCharCode(160) 
             + "No posts have been found yet");
@@ -646,7 +621,7 @@ function send_user()
     if (message.length < 1)
         return;
 
-    request_user("add_contact",message,receive_start);
+    request_user("addcontact",message,receive_start);
 }
 
 if (send_msg_button)

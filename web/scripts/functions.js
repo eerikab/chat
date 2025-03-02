@@ -1,10 +1,10 @@
 ///Functions shared between pages
 
 //Enable "release" to use production IP, otherwise use localhost
-const release = 1
+const release = 0
 
 //App version, increase with each released update
-const version = "0.0.3"
+const version = "0.1.0a1"
 
 //Declare variable
 var username;
