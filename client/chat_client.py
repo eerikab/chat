@@ -3,8 +3,6 @@
 import chat_settings as settings
 import chat_global as cg
 import chat_client_gui as ccg
-import asyncio
-import threading
 
 class client():
     def __init__(self,master) -> None:
@@ -26,12 +24,13 @@ class client():
         
         self.check_min = 0
         self.check_max = 0
+        self.delay = 600000
 
         # Window
         self.gui = ccg.client(self)
         self.win = self.gui.win
         self.get_contacts()
-        #self.win.widget.after(delay,self.update)
+        self.win.widget.after(self.delay,self.update)
         self.win.widget.after(100, self.gui.switch)
 
         #asyncio.run(settings.broadcast_start(self.broadcast))
@@ -248,9 +247,8 @@ class client():
                 self.win.widget.after(0,self.receive)
 
     def update(self):
-        if self.keep_updating and not self.checking:
-            self.receive()
-        #self.win.widget.after(delay,self.update)
+        self.request("ping")
+        self.win.widget.after(self.delay,self.update)
 
     def get_contacts(self):
         contacts = self.request("contacts")
@@ -331,21 +329,7 @@ class client():
         else:
             return "room" + id + cg.userid
 
-def start_client(master):
-    client(master)
-
-async def setup(master):
-    start_client(master)
-    await asyncio.create_task(settings.broadcast())
-
 def main(master):
-    #asyncio.run(setup(master))
-    '''t1 = threading.Thread(target=client, args=(master,))
-    t2 = threading.Thread(target=settings.broadcast)
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()'''
     client(master)
 
 if __name__ == "__main__": print("Please run the program through chat_main.py")

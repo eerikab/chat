@@ -21,7 +21,7 @@ import http
 import signal
 
 '''Version'''
-version = "0.1.0a2" #Version of server program, increase it with each update
+version = "0.1.0a3" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -55,6 +55,9 @@ Example JSON:
 "CHAT_DATABASE_TEST": "dbname=chat_server user=postgres password=postgres"
 }
 '''
+
+'''For local testing, you may want to set up Postgres locally
+https://docs.fedoraproject.org/en-US/quick-docs/postgresql/'''
 
 chat_database = ""
 chat_database_test = ""
@@ -140,12 +143,16 @@ class db_connection():
         self.conn.close()
 
 db = db_connection()
-open_connections = []
+open_connections = dict()
 
 #Functions
+def time_raw():
+    '''Return current time in datetime format'''
+    return datetime.datetime.now(datetime.timezone.utc)
+
 def time():
     '''Return current time in UTC'''
-    return str(datetime.datetime.now(datetime.timezone.utc))[:22]
+    return str(time_raw())[:22]
 
 def hashing(txt):
     '''SHA256 hash on string'''
@@ -189,6 +196,7 @@ def validate(get):
         password = get[2]
         row = db_connect("SELECT password FROM USERS WHERE userid=%s;", (user,))
         if row[0][0] == hash_password(user,password):
+            update_connection(user)
             return True
         else:
             return False
@@ -261,6 +269,20 @@ def post_count():
     '''Get the amount of posts sent'''
     return db_connect("SELECT COUNT(*) FROM Posts")[0][0]
 
+def close_connections():
+    '''Remove old connections to clients'''
+    for i in open_connections.copy():
+        gap = time_raw() - open_connections[i][1]
+        #gap = time_raw() - datetime.datetime.now()
+        if gap.total_seconds() / 60 > 20:
+            del open_connections[i]
+
+def update_connection(userid):
+    '''Update last ping time for user in connection'''
+    for i in open_connections:
+        if open_connections[i][0] == userid:
+            open_connections[i][1] = time_raw()
+        
 
 # RESPONSES
 
@@ -594,6 +616,10 @@ def commands(get):
     
     elif cmd == "broadcast":
         return "OK"
+    
+    elif cmd == "ping":
+        update_connection(get[1])
+        return "OK"
 
     return "Error: Invalid function " + str(cmd)
 
@@ -688,11 +714,15 @@ async def handle(websocket):
         await websocket.send(resp)
 
         #Add to broadcast list
+        close_connections()
         if get[0] == "broadcast":
-            open_connections.append(websocket)
+            open_connections[websocket] = [get[1], time_raw()]
         #If message posted, broadcast to everyone
         if get[0] == "message":
-            broadcast(open_connections, resp)
+            conn_list = []
+            for i in open_connections:
+                conn_list.append(i)
+            broadcast(conn_list, resp)
         print(open_connections)
 
 async def main():

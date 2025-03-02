@@ -120,7 +120,7 @@ async def broadcast(command=default):
     print("BROADCAST START start")
     async with connect(f"{cg.HOST}:{cg.PORT}") as websocket:
         print("BROADCAST START start")
-        await websocket.send("broadcast")
+        await websocket.send(f"broadcast\n{cg.userid}")
         while True:
             message = await websocket.recv()
             print("\nBroadcast ",message)
@@ -128,7 +128,8 @@ async def broadcast(command=default):
                 command(message)
 
 def run_broadcast(command=default):
-    asyncio.run(broadcast(command))
+    #asyncio.run(broadcast(command))
+    pass
 
 def broadcast_start(command=default):
     target = threading.Thread(target=run_broadcast, daemon=True, args=(command,))
