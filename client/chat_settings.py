@@ -128,7 +128,7 @@ async def broadcast(command=default):
                 command(message)
 
 def run_broadcast(command=default):
-    #asyncio.run(broadcast(command))
+    asyncio.run(broadcast(command))
     pass
 
 def broadcast_start(command=default):

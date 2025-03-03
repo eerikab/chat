@@ -214,7 +214,9 @@ function receive_start()
                 set_title("Messages - " + users[room]);
 
             //Check for new messages periodically
-            //window.setInterval(refresh, delay);
+            window.setInterval(refresh, delay);
+            request_user("broadcast","",broadcast)
+            
         }
     
         if (postbox)
@@ -329,7 +331,6 @@ function receive_msg(result)
     {
         for (i = 0; i < data.length; i++)
         {
-            console.log("destroy u");
             var user = data[i][2];
             if (!(user in users_raw))
                 users_raw.push(user);
@@ -344,13 +345,14 @@ function receive_msg(result)
                 posts["max"] = num;
             if (!("min" in posts) || num < posts["min"])
                 posts["min"] = num;
-            get_user();
         }
+        get_user();
     }
     else
     {
         for (i = 0; i < data.length; i++)
         {
+            console.log(i);
             var user = data[i][1];
             if (!(user in users_raw))
                 users_raw.push(user);
@@ -359,33 +361,16 @@ function receive_msg(result)
             var msg = data[i][3];
             num = data[i][0];
 
-            msgs[room][String(data[i][0])] = [
+            msgs[room][String(num)] = [
                 user, date, msg
             ];
             if (!("max" in msgs[room]) || num > msgs[room]["max"])
                 msgs[room]["max"] = num;
             if (!("min" in msgs[room]) || num < msgs[room]["min"])
                 msgs[room]["min"] = num;
-            get_user();
         }
+        get_user();
     }
-}
-
-function post_length(result)
-{
-    var data = parseInt(result);
-    
-    posts[String(num)].push(data);
-
-    num += 1;
-    while(num <= posts["max"]){
-        if (posts[String(num)].length === 3){
-            request_user("num","post" + String(num), post_length);
-            return;
-        }
-        num += 1;
-    }
-    get_user();
 }
 
 //Display messages
@@ -439,7 +424,20 @@ function display_messages()
 }
 
 function refresh()
-{       
+{
+    //Ping server periodically
+    request_user("ping");
+}
+
+function broadcast(data="")
+{
+    var resp = data.split("\n");
+    if (resp[0] !== "update")
+        return;
+    if (resp[1].indexOf("room") && id_to_room(room) == resp[1])
+        resp[1] == room
+    if (resp[1] in msgs && resp[1] == room)
+        receive_start();
 }
 
 function display_posts()
@@ -603,7 +601,7 @@ function send_msg()
     if (message.length < 1)
         return;
 
-    request_user("message",room+"\n"+message,receive_start);
+    request_user("message",room+"\n"+message);
 }
     
 function send_post()

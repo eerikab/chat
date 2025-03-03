@@ -4,7 +4,7 @@
 const release = 0
 
 //App version, increase with each released update
-const version = "0.1.0a1"
+const version = "0.1.0a3"
 
 //Declare variable
 var username;
@@ -116,7 +116,7 @@ async function hash_password(username,password)
     return await hashing(pass_txt);
 }
 
-function request_user(cmd,txt,func)
+function request_user(cmd="",txt="",func=dummy)
 {
     //Server request after user has logged in, includes authentication
     var msg = cmd+"\n"+userid+"\n"+pass_hash+"\n"+txt;
@@ -139,9 +139,11 @@ function go_back()
     location.href = sessionStorage.getItem("prevpage");
 }
 
-function time_format(time)
+function time_format(time, utc=true)
 {
-    let date = new Date(time + " UTC");
+    if (utc)
+        time += " UTC"
+    let date = new Date(time);
     let date_str = date.getDate() + " " + months[date.getMonth()] + " " + date.getFullYear() + " " + date.getHours().toString().padStart(2,"0") + ":" + date.getMinutes().toString().padStart(2,"0");
     return date_str;
 }
@@ -160,6 +162,19 @@ function add_node(node, text, html_class="span", add_class="comment")
     if (add_class)
         txt.classList.add(add_class);
     node.appendChild(txt);
+}
+
+function id_to_room(other_id)
+{
+    if (parseInt(userid) < parseInt(other_id))
+        return "room" + userid + other_id;
+    else
+        return "room" + other_id + userid;
+}
+
+function dummy()
+{
+    return;
 }
 
 get_userdata();
