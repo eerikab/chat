@@ -3,7 +3,7 @@
 import os
 
 #Connection
-release = 0 #Release/Debug flag, 0 is for localhost, 1 for public ip
+release = 1 #Release/Debug flag, 0 is for localhost, 1 for public ip
 HOST, PORT = "ws://localhost", 9000
 
 if release:
