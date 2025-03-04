@@ -21,7 +21,7 @@ import http
 import signal
 
 '''Version'''
-version = "0.1.0" #Version of server program, increase it with each update
+version = "0.1.1" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -302,7 +302,29 @@ def create_session(userid):
     open_connections[session] = [0, userid, time_raw()]
     return session
 
-        
+def update_posts():
+    '''Refresh blank entries in posts list
+    Temporary solution'''
+    ls = db_connect('''SELECT * FROM Posts;''')
+
+    for i in ls:
+        #If post data is missing
+        if i[2] == None:
+            ls = db_connect(
+                #Get post data
+                psycopg2.sql.SQL('''SELECT * FROM {}''').format(
+                    psycopg2.sql.Identifier("post"+str(i[0]))))
+            
+            #Get first 3 lines of the message
+            msg_list = ls[0][3].split("\n")
+            msg_short = ""
+            for j in msg_list[:3]:
+                msg_short += j + "\n"
+            
+            #Update entry in post list
+            sql = db_connect('''UPDATE Posts SET username=%s, date_created=%s, msg=%s, length=%s
+                             WHERE id=%s''', (ls[0][1], ls[0][2], msg_short, len(ls), i[0]))
+                    
 
 # RESPONSES
 
@@ -662,6 +684,8 @@ db_connect('''ALTER TABLE Posts ADD COLUMN IF NOT EXISTS length INTEGER;''')
 #Get data count
 print(db_connect("SELECT count(*) from Users")[0][0], "users loaded")
 print(post_count(), "posts found")
+
+update_posts()
 
 db.close()
 
