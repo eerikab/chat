@@ -248,25 +248,24 @@ class contact_btn():
             msg = "No messages"
         else:
             if str(num) not in master.msgs[i]:
-                req = master.request(cmd="get",txt=i + "\n" + str(num)).split("\n")
-                msg = ""
-                for j in req[2:]:
-                    msg += j
+                req = master.request(cmd="get",txt=i + "\n" + str(num) + "\n" + str(num))
+                msgs = settings.json_decode(req)
                 
                 master.msgs[i][num] = {
-                    "user" : req[0],
-                    "date" : settings.time_format(req[1]),
-                    "msg" : msg
+                    "user" : msgs[0][1],
+                    "date" : settings.time_format(msgs[0][2]),
+                    "msg" : msgs[0][3].strip()
                 }
             md = master.msgs[i][num]
             date = md["date"]
+            msg = md["msg"]
 
         self.widget = cw.text_button(
                 master.gui, master.gui.frame_contacts,
                 command = self.click,
                 text_user = user,
                 text_date = date,
-                msg = "\n" + msg
+                msg = "\n" + msg.split("\n")[0]
             )
         self.i = i
         self.master = master

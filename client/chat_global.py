@@ -3,14 +3,14 @@
 import os
 
 #Connection
-release = 1 #Release/Debug flag, 0 is for localhost, 1 for public ip
+release = 0 #Release/Debug flag, 0 is for localhost, 1 for public ip
 HOST, PORT = "ws://localhost", 9000
 
 if release:
     HOST, PORT = "wss://chat-4zh4.onrender.com", "" #Server IP for released application
 
 #Versioning
-version = "0.0.3" #App version, increase with each released update
+version = "0.1.0" #App version, increase with each released update
 server_version = ""
 
 #User
@@ -21,6 +21,7 @@ theme = "" #Selected theme
 accent = "" #Selected accent
 apply_theme = 1 #Whether to apply theming
 remember = 1 #Remember username and password hash for next login
+session = "" #Session ID
 
 #File management
 directory = os.path.dirname(__file__)

@@ -7,6 +7,7 @@ const div_theme = document.getElementById("theme");
 const div_accent = document.getElementById("accent");
 const check_apply = document.getElementById("apply");
 const account_button = document.getElementById("btn_account");
+const date_comment = document.getElementById("test_time");
 
 if (!username)
     account_button.remove();
@@ -17,6 +18,8 @@ if (apply === 1)
 check_apply.checked = true;
 else
 check_apply.checked = false;
+
+date_comment.textContent = time_format(Date(), false);
 
 class toggle {
 

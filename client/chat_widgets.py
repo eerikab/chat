@@ -28,10 +28,6 @@ ls_comment = []
 ls_canvas = []
 ls_error = []
 
-def default():
-    #Dummy function, does nothing
-    pass
-
 #Initialize Tkinter
 root = tk.Tk()
 root.withdraw() #Disable the main window
@@ -55,7 +51,7 @@ class window():
         if close_all:
             self.widget.protocol('WM_DELETE_WINDOW', self.destroyall)
 
-    def on_exit(self,command=default):
+    def on_exit(self,command=setting.default):
         self.widget.protocol('WM_DELETE_WINDOW', command)
 
     def destroy(self):
@@ -245,7 +241,7 @@ class button():
             activeforeground = cw_theme[self.color["activeforeground"]])
 
 class radio():
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",value="",variable=0,indicatoron=0,command=default,
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",value="",variable=0,indicatoron=0,command=setting.default,
             borderwidth=0,padix=0,padiy=0,width=0,highlightthickness=0,bg = "msg",fg = "text",
             activebackground = "high",activeforeground = "text",selectcolor = "selected"):
         self.window = window
@@ -265,7 +261,7 @@ class radio():
             selectcolor = cw_theme[self.color["selectcolor"]])
     
 class scroll():
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",command=default,highlightthickness=0,
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",command=setting.default,highlightthickness=0,
                  borderwidth=0,bg="side",troughcolor="textbox",activebackground="high"):
         self.window = window
         self.widget = tk.Scrollbar(master.widget,command=command,highlightthickness=highlightthickness,borderwidth=borderwidth)
@@ -281,7 +277,7 @@ class scroll():
             activebackground = cw_theme[self.color["activebackground"]])
         
 class check():
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",highlightthickness=0,command=default,
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",highlightthickness=0,command=setting.default,
                  bg = "bg",fg = "text",activebackground = "high",activeforeground = "text",selectcolor = "msg",activecolor = "button",value=0):
         self.variable = tk.IntVar(root, value=value)
         self.window = window

@@ -34,11 +34,15 @@ function load_data()
 function login(resp)
 {
     //Save values
-    userid = resp;
-    sessionStorage.setItem("username",username);
-    sessionStorage.setItem("userid",userid);
-    sessionStorage.setItem("password",pass_hash);
+    let ids = resp.split("\n");
+    userid = ids[0];
+    sessionid = ids[1];
 
+    sessionStorage.setItem("userid", userid);
+    sessionStorage.setItem("sessionid", sessionid);
+    sessionStorage.setItem("username",username);
+    sessionStorage.setItem("password",pass_hash);
+    
     if (check_remember && check_remember.checked)
     {
         localStorage.setItem("username",username);

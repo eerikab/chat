@@ -12,6 +12,7 @@ import asyncio
 from websockets.client import connect
 import webbrowser
 import sys
+import threading
 
 def reset():
     #Reset all themes
@@ -105,11 +106,36 @@ def theming():
             accentls = i
     return {**themels,**accentls} 
 
+def default(args=""):
+    #Dummy function, does nothing
+    pass
+
 async def send(command):
     #Communicate through websocket
     async with connect(f"{cg.HOST}:{cg.PORT}") as websocket:
         await websocket.send(command)
         return await websocket.recv()
+    
+async def broadcast(command=default):
+    print("BROADCAST START start")
+    async with connect(f"{cg.HOST}:{cg.PORT}") as websocket:
+        print("BROADCAST START start")
+        await websocket.send("broadcast" + "\n" + cg.userid + "\n" + cg.password + "\n" + cg.session)
+        while True:
+            message = await websocket.recv()
+            print("\nBroadcast ",message)
+            if "update" in message:
+                command(message)
+
+def run_broadcast(command=default):
+    asyncio.run(broadcast(command))
+    pass
+
+def broadcast_start(command=default):
+    target = threading.Thread(target=run_broadcast, daemon=True, args=(command,))
+    target.start()
+    #asyncio.create_task(broadcast(command))
+    #asyncio.get_event_loop().run_forever()
 
 def request(command):
     try:
@@ -118,13 +144,14 @@ def request(command):
         print("Response",resp)
 
         if resp[:5] == "Error" or resp[:12] == "Server error":
+            update_user(resp)
             return False, resp
         
         return True, resp
 
     except Exception as e:
-        resp = "Error: " + str(e)
-        print(resp)
+        resp = "Error: Could not connect to server"
+        print(str(e))
         return False, resp
 
 def hashing(name):
@@ -209,11 +236,22 @@ def ini_to_json():
     with open(cg.directory+"/config/chat_themes.json","w") as file:
         file.write(config_json)
 
+def json_decode(string):
+    return json.loads(string)
+
 def url(page):
     webbrowser.open(page)
 
 def version():
     return sys.version.split()[0]
+
+def update_user(resp):
+    #If session has expired, request a new one
+    if resp == "Error: Invalid session":
+        ch, resp = request("login\n"+cg.user+"\n"+cg.password)
+        if ch:
+            cg.session = resp.split("\n")[1]
+
     
 
 #Init
@@ -281,3 +319,4 @@ for i in accentlist:
 load_user()
 
 themed = 0
+broadcast_function = default
