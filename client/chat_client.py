@@ -63,7 +63,7 @@ class client():
             pass'''
 
     def request(self,cmd="",txt=""):
-        msg = cmd + "\n" + cg.userid + "\n" + cg.password + "\n" + txt
+        msg = cmd + "\n" + cg.userid + "\n" + cg.password + "\n" + cg.session + "\n" + txt
         msg = msg.strip()
         ch, resp = settings.request(msg)
 

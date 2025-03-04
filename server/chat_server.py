@@ -21,7 +21,7 @@ import http
 import signal
 
 '''Version'''
-version = "0.1.0a3" #Version of server program, increase it with each update
+version = "0.1.0" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -190,18 +190,31 @@ def db_connect(statement="", data=()):
         return ("Server error: " + str(e),)
 
 def validate(get):
-    '''Verify user identity through userid and hashed password'''
+    '''Verify user identity through userid and hashed password
+    Return empty string upon succeeding or the error message'''
     try:
+        #Functions that don't need prior validations
+        if get[0] == "login" or get[0] == "register" or get[0] == "version":
+            return ""
+        
+        #Check for username and password
         user = get[1]
         password = get[2]
+        session = get[3]
+        
         row = db_connect("SELECT password FROM USERS WHERE userid=%s;", (user,))
-        if row[0][0] == hash_password(user,password):
-            update_connection(user)
-            return True
+        if row[0][0] != hash_password(user,password):
+            return "Invalid name or password"
+        
+        #Check for a valid session ID
+        if session in open_connections and open_connections[session][1] == user:
+            update_connection(session)
+            return ""
         else:
-            return False
-    except:
-        return False
+            return "Invalid session"
+
+    except Exception as e:
+        return "Missing credentials " + str(e)
     
 def user_exists(name="",key="username"):
     '''Check if username or email is taken in the database'''
@@ -272,16 +285,23 @@ def post_count():
 def close_connections():
     '''Remove old connections to clients'''
     for i in open_connections.copy():
-        gap = time_raw() - open_connections[i][1]
+        gap = time_raw() - open_connections[i][2]
         #gap = time_raw() - datetime.datetime.now()
         if gap.total_seconds() / 60 > 20:
             del open_connections[i]
 
-def update_connection(userid):
+def update_connection(sessionid):
     '''Update last ping time for user in connection'''
     for i in open_connections:
-        if open_connections[i][0] == userid:
-            open_connections[i][1] = time_raw()
+        if open_connections[i] == sessionid:
+            open_connections[i][2] = time_raw()
+
+def create_session(userid):
+    '''Generate session ID for login and add to connections'''
+    session = randnum()
+    open_connections[session] = [0, userid, time_raw()]
+    return session
+
         
 
 # RESPONSES
@@ -289,17 +309,18 @@ def update_connection(userid):
 def commands(get):
     cmd = get[0]
 
+    verif = validate(get)
+    if verif:
+        return "Error: " + verif
+
     if cmd == "message":
         user = get[1]
         msg = ""
         date = time()
-
-        if not validate(get):
-            return "Error: Invalid credentials"
         
-        post = get_directory(get[3],get[1])
+        post = get_directory(get[4],get[1])
         
-        for i in get[4:]:
+        for i in get[5:]:
             msg += i+"\n"
         msg = msg.strip()
 
@@ -329,11 +350,8 @@ def commands(get):
         user = get[1]
         msg = ""
         date = time()
-
-        if not validate(get):
-            return "Error: Invalid credentials"
         
-        for i in get[3:]:
+        for i in get[4:]:
             msg += i+"\n"
         msg = msg.strip()
 
@@ -352,7 +370,7 @@ def commands(get):
             return sql[0][0]
         
         msg_short = ""
-        for i in get[3:6]:
+        for i in get[4:7]:
             msg_short += i + "\n"
         
         sql = db_connect('''INSERT INTO Posts(room, username, date_created, msg, length) 
@@ -363,10 +381,7 @@ def commands(get):
         return "OK"
 
     elif cmd == "num":
-        if not validate(get):
-            return "Error: Invalid credentials"
-        
-        post = get_directory(get[3],get[1])
+        post = get_directory(get[4],get[1])
 
         if not check_in_room(post,get[1]):
             return "Error: No access to room"
@@ -375,22 +390,17 @@ def commands(get):
                 psycopg2.sql.Identifier(post)))[0][0]
     
     elif cmd == "postnum":
-        if not validate(get):
-            return "Error: Invalid credentials"
         return str(post_count())
 
     elif cmd == "get":
-        if not validate(get):
-            return "Error: Invalid credentials"
-
-        post = get_directory(get[3],get[1])
+        post = get_directory(get[4],get[1])
 
         if not check_in_room(post,get[1]):
             return "Error: No access to room"
 
         ls = db_connect(
                 psycopg2.sql.SQL('''SELECT * FROM {} WHERE id>=%s AND id<=%s;''').format(
-                    psycopg2.sql.Identifier(post)), (int(get[4]), int(get[5])))
+                    psycopg2.sql.Identifier(post)), (int(get[5]), int(get[6])))
         
         return json.dumps(ls, default=str)
         
@@ -404,24 +414,19 @@ def commands(get):
         return msg'''
 
     elif cmd == "getposts":
-        if not validate(get):
-            return "Error: Invalid credentials"
+        #post = get_directory(get[4], get[1])
 
-        #post = get_directory(get[3], get[1])
-
-        ls = db_connect('''SELECT * FROM Posts WHERE id>=%s AND id<=%s;''', (int(get[3]), int(get[4])))
+        ls = db_connect('''SELECT * FROM Posts WHERE id>=%s AND id<=%s;''', (int(get[4]), int(get[5])))
         
         return json.dumps(ls, default=str)
     
     elif cmd == "user":
-        if not validate(get):
-            return "Error: Invalid credentials"
         user = db_connect("SELECT username FROM Users WHERE userid=%s;", 
-                            (get[3],))
+                            (get[4],))
         if user:
             return user[0][0]
         else:
-            return "[user " + get[3] + "]"
+            return "[user " + get[4] + "]"
 
     elif cmd == "login":
         user = get[1]
@@ -436,8 +441,9 @@ def commands(get):
                 '''SELECT userid FROM Users
                 WHERE (username=%s OR email=%s) AND password=%s;''', 
                 (user, hashing(user), hash_password(userid[0][0], password))
-            ) or "error" in userid[0][0]:
-                return userid[0][0]
+            ):
+                sessionid = create_session(userid[0][0])
+                return userid[0][0] + "\n" + sessionid
         
         return "Error: Invalid username or password"
 
@@ -485,20 +491,19 @@ def commands(get):
         )
         if sql:
             return sql[0][0]
+        
+        sessionid = create_session(userid)
 
-        return userid
+        return userid + "\n" + sessionid
     
     elif cmd == "update":
         userid = get[1]
-        mode = get[3]
-        new_raw = get[4]
+        mode = get[4]
+        new_raw = get[5]
 
         #Error checking
-        if not validate(get):
-            return "Error: Invalid credentials"
-
         if mode == "username":
-            pw = get[5]
+            pw = get[6]
             new = new_raw
 
             if len(new) < 4 or len(new) > 32:
@@ -550,11 +555,9 @@ def commands(get):
         return "OK"
     
     elif cmd == "addcontact":
-        if not validate(get):
-            return "Error: Invalid credentials"
         
         user = get[1] #ID of caller user
-        other_user = get[3] #Name of second user
+        other_user = get[4] #Name of second user
 
         other_id = user_exists(other_user)
         if not other_id:
@@ -596,9 +599,6 @@ def commands(get):
         return "Contact added"
     
     elif cmd == "contacts":
-        if not validate(get):
-            return "Error: Invalid credentials"
-        
         user = get[1]
         text = ""
 
@@ -618,7 +618,7 @@ def commands(get):
         return "OK"
     
     elif cmd == "ping":
-        update_connection(get[1])
+        update_connection(get[3])
         return "OK"
 
     return "Error: Invalid function " + str(cmd)
@@ -716,12 +716,13 @@ async def handle(websocket):
         #Add to broadcast list
         close_connections()
         if get[0] == "broadcast":
-            open_connections[websocket] = [get[1], time_raw()]
+            open_connections[get[3]][0] = websocket
         #If message posted, broadcast to everyone
         if get[0] == "message":
             conn_list = []
             for i in open_connections:
-                conn_list.append(i)
+                if open_connections[i][0]:
+                    conn_list.append(open_connections[i][0])
             broadcast(conn_list, resp)
         print(open_connections)
 

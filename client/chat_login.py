@@ -80,7 +80,9 @@ class client():
         ch, resp = settings.request("login\n"+cg.user+"\n"+self.pass_hash)
         if ch:
             try:
-                cg.userid = resp
+                ids = resp.split("\n")
+                cg.userid = ids[0]
+                cg.session = ids[1]
                 self.success = 1
             except:
                 self.login.error.set(resp)
@@ -149,7 +151,7 @@ class client():
     def guiset(self):
         self.window_settings = csg.guiset(self,self.win)
 
-    def client(self,resp):
+    def client(self,resp=""):
         #Destroy settings window, if exists
         try:
             self.window_settings.win.destroy()
@@ -157,9 +159,12 @@ class client():
             pass
 
         #Save user data and create client window
+        ids = resp.split("\n")
         cg.user = self.user
-        cg.userid = resp
+        cg.userid = ids[0]
+        cg.session = ids[1]
         cg.password = self.pass_hash
+        print(cg.userid,cg.session)
         settings.save_user()
         self.win.destroy()
         self.master.client()

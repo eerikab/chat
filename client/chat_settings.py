@@ -120,7 +120,7 @@ async def broadcast(command=default):
     print("BROADCAST START start")
     async with connect(f"{cg.HOST}:{cg.PORT}") as websocket:
         print("BROADCAST START start")
-        await websocket.send(f"broadcast\n{cg.userid}")
+        await websocket.send("broadcast" + "\n" + cg.userid + "\n" + cg.password + "\n" + cg.session)
         while True:
             message = await websocket.recv()
             print("\nBroadcast ",message)
@@ -144,13 +144,14 @@ def request(command):
         print("Response",resp)
 
         if resp[:5] == "Error" or resp[:12] == "Server error":
+            update_user(resp)
             return False, resp
         
         return True, resp
 
     except Exception as e:
-        resp = "Error: " + str(e)
-        print(resp)
+        resp = "Error: Could not connect to server"
+        print(str(e))
         return False, resp
 
 def hashing(name):
@@ -243,6 +244,14 @@ def url(page):
 
 def version():
     return sys.version.split()[0]
+
+def update_user(resp):
+    #If session has expired, request a new one
+    if resp == "Error: Invalid session":
+        ch, resp = request("login\n"+cg.user+"\n"+cg.password)
+        if ch:
+            cg.session = resp.split("\n")[1]
+
     
 
 #Init
