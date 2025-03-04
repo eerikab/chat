@@ -1,7 +1,7 @@
 ///Functions shared between pages
 
 //Enable "release" to use production IP, otherwise use localhost
-const release = 0
+const release = 1
 
 //App version, increase with each released update
 const version = "0.1.0"
