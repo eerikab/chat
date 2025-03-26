@@ -54,6 +54,7 @@ class client():
         #Pages
         self.login = login(self)
         self.register = register(self)
+        self.recover = recover(self)
         self.switch()
 
         ch, resp = settings.request("version")
@@ -70,9 +71,17 @@ class client():
         if page == "Register":
             self.register.frame.pack()
             self.login.frame.pack_forget()
+            self.recover.frame.pack_forget()
+            self.register.error.set("")
+        elif page == "Recover":
+            self.register.frame.pack_forget()
+            self.login.frame.pack_forget()
+            self.recover.frame.pack()
         else:
             self.login.frame.pack()
             self.register.frame.pack_forget()
+            self.recover.frame.pack_forget()
+            self.login.error.set("")
         self.win.title("Chat login - " + page)
 
     def autosubmit(self):
@@ -140,7 +149,7 @@ class client():
         
         ch, resp = settings.request("register\n"+self.user+"\n"+self.pass_hash+"\n"+self.email_hash)
         if ch:
-            cg.remember = 1
+            cg.remember = 0
             self.client(resp)
         else:
             self.register.error.set(resp)
@@ -169,6 +178,55 @@ class client():
         self.win.destroy()
         self.master.client()
 
+    def start_recover(self):
+        self.page.set("Recover")
+        self.recover.frame_email.pack()
+        self.recover.frame_recover.pack_forget()
+        self.recover.error_email.set("")
+        self.recover.error_recover.set("")
+        self.switch()
+
+    def send_email(self):
+        self.email = self.recover.entry_email.get()
+        ch, resp = settings.request("email\n"+self.email)
+        if ch:
+            self.user = resp
+            self.recover.frame_email.pack_forget()
+            self.recover.frame_recover.pack()
+            self.recover.error_recover.set("")
+        else:
+            self.recover.error_email.set(resp)
+
+    def reset_password(self):
+        rec_code = self.recover.entry_recover.get()
+        self.password = self.recover.entry_pass.get()
+        self.pass2 = self.recover.pass2.get()
+
+        if rec_code == "" or self.password == "" or self.pass2 == "":
+            self.recover.error_recover.set("Please fill all fields")
+            return
+        
+        if len(self.password) < 8 or len(self.password) > 64:
+            self.recover.error_recover.set("Password must be 8-64 characters")
+            return
+        
+        if self.password != self.pass2:
+            self.recover.error_recover.set("Passwords do not match")
+            return
+        
+        if len(rec_code) != 8:
+            self.recover.error_recover.set("Invalid code")
+            return
+
+        self.pass_hash = settings.hash_password(self.user, self.password)
+        ch, resp = settings.request("reset\n"+rec_code+"\n"+self.email+"\n"+self.pass_hash)
+        if ch:
+            cg.remember = 0
+            self.client(resp)
+        else:
+            self.recover.error_recover.set(resp)
+    
+
 class login():
     def __init__(self,master=client) -> None:
         global cl
@@ -190,6 +248,7 @@ class login():
         self.error = cw.error(self.master,self.frame)
         self.send = cw.button(self.master,self.frame, text="Log in", command=master.submit, pady=8)
 
+        cw.label_button(self.master, self.frame, text="Recover password", command=master.start_recover)
         cw.label_button(self.master, self.frame, text="Web version", url="https://eerikab.github.io/chat/")
 
 class register():
@@ -218,6 +277,39 @@ class register():
 
         self.error = cw.error(self.master,self.frame)
         self.send = cw.button(self.master,self.frame, text="Sign up", command=master.signup,pady=8)
+
+class recover():
+    def __init__(self, master=client):
+        self.master = master
+
+        self.frame = cw.frame(self.master, self.master.right)
+        self.frame.pack_forget()
+
+        cw.label(self.master, self.frame, text="Recover account",pady=8)
+
+        self.frame_email = cw.frame(self.master, self.frame)
+        cw.label(self.master,self.frame_email,text="Enter the email address linked to your account\n" 
+                 "If it is valid, you will be sent a verification code")
+        self.entry_email = cw.entry(self.master,self.frame_email)
+        self.error_email = cw.error(self.master,self.frame_email)
+        self.submit_email = cw.button(self.master,self.frame_email, text="Send",pady=8,command=master.send_email)
+
+        self.frame_recover = cw.frame(self.master, self.frame)
+        cw.label(self.master,self.frame_recover,text='An 8-digit recovery code should be sent'
+                    '\nto your email address from "tickchatsprt"'
+                    "\nIf you can't see it, also check the spam folder"
+                    "\nThe code will expire in 20 minutes\n\nRecovery code:")
+        self.entry_recover = cw.entry(self.master,self.frame_recover)
+        
+        cw.label(self.master,self.frame_recover,text="Set a new password:")
+        self.entry_pass = cw.entry(self.master,self.frame_recover,show="*")
+        cw.comment(self.master,self.frame_recover,text="8-64 characters")
+        cw.label(self.master,self.frame_recover,text="Confirm new password:")
+        self.pass2 = cw.entry(self.master,self.frame_recover,show="*")
+        self.error_recover = cw.error(self.master,self.frame_recover)
+        self.send = cw.button(self.master,self.frame_recover, text="Submit", command=master.reset_password,pady=8)
+
+
 
 def main(master):
     global cl

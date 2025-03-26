@@ -19,9 +19,11 @@ import psycopg2
 import json
 import http
 import signal
+import smtplib
+from email.message import EmailMessage
 
 '''Version'''
-version = "0.1.1" #Version of server program, increase it with each update
+version = "0.1.2" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -39,6 +41,8 @@ client/chat_global.py and web/scripts/functions.js respectively'''
 HOST, PORT = "0.0.0.0", 9000 #Production IP
 HOST_TEST, PORT_TEST = "127.0.0.1", 9000 #Testing IP
 
+smtp_address, smtp_port = "smtp.gmail.com", 587 #Email provider
+
 '''Add data for connecting to PostgreSQL database 
 in CHAT_DATABASE environment variable as one string.
 For local testing, set up a postgres database in your device 
@@ -46,39 +50,55 @@ and add it to CHAT_DATABASE_TEST.
 
 To always use Release data on your server, set CHAT_RELEASE to anything positive.
 
+Set the support email address to CHAT_EMAIL and necessary
+credentials for it in CHAT_EMAIL_PASSWORD.
+
 Ideally, set them as environment variables in the server service provider.
 Otherwise they are read from env.json in this directory.
 
 Example JSON:
 {
 "CHAT_DATABASE": "postgresql://postgres.____:____@____.pooler.supabase.com:____/postgres",
-"CHAT_DATABASE_TEST": "dbname=chat_server user=postgres password=postgres"
+"CHAT_DATABASE_TEST": "dbname=chat_server user=postgres password=postgres",s
+"CHAT_EMAIL": "example@gmail.com",
+"CHAT_EMAIL_PASSWORD": "password123"
 }
 '''
 
 '''For local testing, you may want to set up Postgres locally
-https://docs.fedoraproject.org/en-US/quick-docs/postgresql/'''
+https://docs.fedoraproject.org/en-US/quick-docs/postgresql/
+
+To use a Gmail account to send support mails, make sure to enable
+2-factor authentication and set an app password'''
 
 chat_database = ""
 chat_database_test = ""
 chat_release = 0
 
+support_email = ""
+email_pass = ""
+
 ping_interval = 12 * 60 #Message itself every 12 minutes to prevent standby
+recovery_time = 20
 
 #Read variables from "env.json" if exists
 try:
     with open(os.path.dirname(__file__) + "/env.json") as file:
         data = json.loads(file.read())
-        try:
-            chat_database = data["CHAT_DATABASE"]
-        finally:
-            try:
-                chat_database_test = data["CHAT_DATABASE_TEST"]
-            finally:
-                try:
-                    chat_release = data["CHAT_RELEASE"]
-                except:
-                    pass
+        try: chat_database = data["CHAT_DATABASE"]
+        except: pass
+
+        try: chat_database_test = data["CHAT_DATABASE_TEST"]
+        except: pass
+
+        try: chat_release = data["CHAT_RELEASE"]
+        except: pass
+
+        try: support_email = data["CHAT_EMAIL"]
+        except: pass
+            
+        try: email_pass = data["CHAT_EMAIL_PASSWORD"]
+        except: pass
 except:
     pass
 
@@ -89,6 +109,11 @@ if "CHAT_DATABASE_TEST" in os.environ:
     chat_database_test = os.environ["CHAT_DATABASE_TEST"]
 if "CHAT_RELEASE" in os.environ:
     chat_release = os.environ["CHAT_RELEASE"]
+
+if "CHAT_EMAIL" in os.environ:
+    support_email = os.environ["CHAT_EMAIL"]
+if "CHAT_EMAIL_PASSWORD" in os.environ:
+    email_pass = os.environ["CHAT_EMAIL_PASSWORD"]
 
 if chat_release:
     release = 1
@@ -113,7 +138,6 @@ else:
         exit()
 
 print("Server:", host_current, port_current)
-print("Database:", db_address)
 
 #Data directories
 #Deprecated by use of external postgres database
@@ -144,6 +168,7 @@ class db_connection():
 
 db = db_connection()
 open_connections = dict()
+recoveries = dict()
 
 #Functions
 def time_raw():
@@ -194,7 +219,8 @@ def validate(get):
     Return empty string upon succeeding or the error message'''
     try:
         #Functions that don't need prior validations
-        if get[0] == "login" or get[0] == "register" or get[0] == "version":
+        free_commands = ["login", "register", "version", "email", "reset"]
+        if get[0] in free_commands:
             return ""
         
         #Check for username and password
@@ -285,10 +311,15 @@ def post_count():
 def close_connections():
     '''Remove old connections to clients'''
     for i in open_connections.copy():
-        gap = time_raw() - open_connections[i][2]
-        #gap = time_raw() - datetime.datetime.now()
-        if gap.total_seconds() / 60 > 20:
+        if get_time_gap(open_connections[i][2]) > 20 * 60:
             del open_connections[i]
+
+def close_recovery():
+    '''Remove expired password reset requests'''
+    for i in recoveries.copy():
+        if get_time_gap(recoveries[i][0]) > recovery_time * 60:
+            del recoveries[i]
+
 
 def update_connection(sessionid):
     '''Update last ping time for user in connection'''
@@ -324,6 +355,11 @@ def update_posts():
             #Update entry in post list
             sql = db_connect('''UPDATE Posts SET username=%s, date_created=%s, msg=%s, length=%s
                              WHERE id=%s''', (ls[0][1], ls[0][2], msg_short, len(ls), i[0]))
+            
+def get_time_gap(time=time_raw()):
+    '''Return the difference between two datetimes'''
+    gap = time_raw() - time
+    return gap.total_seconds()
                     
 
 # RESPONSES
@@ -642,6 +678,82 @@ def commands(get):
     elif cmd == "ping":
         update_connection(get[3])
         return "OK"
+    
+    elif cmd == "email":
+        email = get[1]
+        
+        data = db_connect('''SELECT userid, username FROM Users WHERE email=%s''', (hashing(hashing(email)),))
+        if not data:
+            return "Error: Invalid email"
+        elif not data[0][0].isnumeric():
+            return data[0][0]
+        else:
+            userid = data[0][0]
+            user = data[0][1]
+            recovery_code = randnum()[:8]
+            while recovery_code in recoveries:
+                recovery_code = randnum()
+            recoveries[recovery_code] = [time_raw(), email]
+
+            #Send email
+            s = smtplib.SMTP(smtp_address, smtp_port)
+            s.starttls()
+
+            s.login(support_email, email_pass)
+            msg = EmailMessage()
+            msg["Subject"] = "Recover your TickChat account"
+            msg["From"] = support_email
+            msg["To"] = email
+            message = f'''Greetings!
+
+A recovery for a TickChat account linked to this email was requested.
+Username: {user}
+
+Your one-time recovery code: {recovery_code}
+This lasts for {recovery_time} minutes, copy it to the currently open chat window to reset your password.
+
+If you didn't request this message, you can ignore it.
+This message was automatically generated, but can be replied to.
+
+Sincerely,
+Eerik'''
+            if not release:
+                message += "\n\nP.S. Server is running on testing mode"
+            msg.set_content(message)
+            
+            s.send_message(msg, support_email, email)
+            s.quit()
+            return user
+
+    elif cmd == "reset":
+        recovery_code = get[1]
+        email = get[2]
+        password = get[3]
+
+        close_recovery()
+
+        if recovery_code in recoveries and email == recoveries[recovery_code][1]:
+            rec = recoveries[recovery_code]
+
+            if email == rec[1] and get_time_gap(rec[0]) < recovery_time * 60:
+                userid = db_connect('''SELECT userid, username FROM Users 
+                                    WHERE email=%s''', (hashing(hashing(email)),))[0][0]
+                new = hash_password(userid, password)
+
+                if db_connect("SELECT * FROM Users WHERE password=%s;", (new,)):
+                    return "Error: No changes made"
+                
+                sql = db_connect('''UPDATE Users SET password=%s 
+                                    WHERE userid=%s;''', (new, userid))
+                
+                if sql:
+                    return sql[0][0]
+                
+                sessionid = create_session(userid)
+                return userid + "\n" + sessionid
+            
+        return "Error: Invalid recovery code"
+    
 
     return "Error: Invalid function " + str(cmd)
 
@@ -699,7 +811,8 @@ def health_check(connection, request):
         if request.path == "/healthz":
             return connection.respond(http.HTTPStatus.OK, "OK\n")
     except Exception as e:
-        print("Health check failed: ",e)
+        #print("Health check failed: ",e)
+        pass
 
 async def keepalive():
     '''Create a connection periodically to keep server running'''
@@ -748,7 +861,6 @@ async def handle(websocket):
                 if open_connections[i][0]:
                     conn_list.append(open_connections[i][0])
             broadcast(conn_list, resp)
-        print(open_connections)
 
 async def main():
     loop = asyncio.get_running_loop()

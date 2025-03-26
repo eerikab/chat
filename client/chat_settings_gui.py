@@ -260,7 +260,7 @@ class guiset():
                 return
             
             pass_hash_new = settings.hash_password(new, password)
-            ch, resp = settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\nusername\n"+new+"\n"+pass_hash_new)
+            ch, resp = settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\n"+cg.session+"\nusername\n"+new+"\n"+pass_hash_new)
             if ch:
                 cg.user = new
                 cg.password = pass_hash_new
@@ -280,7 +280,7 @@ class guiset():
             if settings.regex_email(new) == False:
                 self.error_account.set("Invalid email format")
                 return
-            ch, resp = settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\nemail\n"+email_hash)
+            ch, resp = settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\n"+cg.session+"\nemail\n"+email_hash)
             if ch:
                 self.error_account.set("Changes saved")
             else:
@@ -299,7 +299,7 @@ class guiset():
             
             pass_hash_new = settings.hash_password(cg.user, new)
             
-            ch, resp = settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\npassword\n"+pass_hash_new)
+            ch, resp = settings.request("update\n"+self.userid+"\n"+pass_hash_old+"\n"+cg.session+"\npassword\n"+pass_hash_new)
             if resp == "OK":
                 cg.password = pass_hash_new
                 self.error_account.set("Changes saved")

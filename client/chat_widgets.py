@@ -368,7 +368,7 @@ class label_button(button):
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",
                  highlightthickness=0,width=0,justify="center",wraplength=0,anchor="center",
                  bg = "bg",fg = "button",activebackground = "bg",activeforeground = "button_high", i = 0,
-                 padix = 0, padiy = 0, borderwidth = 0, url = ""):
+                 padix = 0, padiy = 0, borderwidth = 0, url = "", command=setting.default):
         self.window = window
         self.url = url
 
@@ -380,10 +380,13 @@ class label_button(button):
         self.widget = self.child.widget
         self.color = {"bg":bg, "fg":fg, "activebackground":activebackground, "activeforeground":activeforeground}
         self.i = i
+        self.command = command
 
     def open_url(self):
         if self.url:
             setting.url(self.url)
+        else:
+            self.command()
 
 class text_button(text):
     def __init__(self,window,master,padx=8,pady=8,side="top",expand=0,fill="x",width=20,height=3,highlightthickness=0,borderwidth=0, wrap="none",

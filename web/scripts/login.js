@@ -15,7 +15,13 @@ const entry_user = document.getElementById("name");
 const entry_email = document.getElementById("email");
 const entry_password = document.getElementById("password");
 const entry_confirm = document.getElementById("confirm");
+const entry_recover = document.getElementById("rec_code");
 const check_remember = document.getElementById("remember");
+const div_email = document.getElementById("recover_email");
+const div_recover = document.getElementById("recover");
+
+if (div_recover)
+    div_recover.style.display = "none";
 
 function load_data()
 {
@@ -94,7 +100,7 @@ function submit_register()
     }
     if (password.length < 8 || password.length > 64)
     {
-        error_set("Username must be 8-64 characters");
+        error_set("Password must be 8-64 characters");
         return;
     }
     if (password !== confirm_value)
@@ -117,8 +123,58 @@ function submit_register()
     hash_password(username,password).then(function(hash){
         pass_hash = hash;
         hashing(email).then(function(email_hash){
-        request_raw("register\n"+username+"\n"+pass_hash+"\n"+email_hash,login);
+        request_raw("register\n"+username+"\n"+pass_hash+"\n"+email_hash, login);
     })});
+}
+
+function submit_email()
+{
+    email = entry_email.value;
+    if (email === "")
+    {
+        error_set("Please fill all fields");
+        return;
+    }
+    request_raw("email\n"+email, switch_to_recovery);
+}
+
+function switch_to_recovery(resp)
+{
+    username = resp;
+    div_email.style.display = "none";
+    div_recover.style.display = "block";
+}
+
+function reset_password()
+{
+    let rec_code = entry_recover.value;
+    password = entry_password.value;
+    confirm_value = entry_confirm.value;
+
+    if (rec_code === "" || password === "" || confirm_value === "")
+    {
+        error_set("Please fill all fields");
+        return;
+    }
+    if (password.length < 8 || password.length > 64)
+    {
+        error_set("Password must be 8-64 characters");
+        return;
+    }
+    if (password !== confirm_value)
+    {
+        error_set("Passwords do not match");
+        return;
+    }
+    if (rec_code.length !== 8)
+    {
+        error_set("Invalid code");
+        return;
+    }
+    hash_password(username, password).then(function(hash){
+        pass_hash = hash
+        request_raw("reset\n"+rec_code+"\n"+email+"\n"+pass_hash, login)
+    })
 }
 
 //Get server version

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="styles/font.css" rel="stylesheet"> 
+    <link rel="stylesheet" href="styles/layout.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="scripts/theming.js"></script>
+    
+    <title>Chat login - Recover</title>
+</head>
+<body>
+    <aside>
+        <button onclick="location.href='index.html';" class="btn_inactive">Login</button>
+        <br><button onclick="location.href='register.html';" class="btn_inactive">Register</button>
+        <div class="list_bottom">
+            <button onclick="location.href='appearance.html';">Settings</button><br><br>
+        </div>
+    </aside>
+
+    <div class="main">
+        <br>Recover account<br>
+        <div id="recover_email" method="post">
+            <br>Enter the email address linked to your account
+            <br>If it is valid, you will be sent a verification code
+            <br><br><input type="text" id="email" name="email" required>
+            <br><br><button type="submit" onclick="submit_email()">Send</button>
+        </div>
+        <div id="recover">
+            <br>An 8-digit recovery code should be sent
+            <br>to your email address from "tickchatsprt"
+            <br>If you can't see it, also check the spam folder
+            <br>The code will expire in 20 minutes
+            <br><br>Recovery code:
+            <br><input type="text" id="rec_code" name="rec_code" required>
+            <br><br><label for="password">Set a new password:</label>
+            <br><input type="password" id="password" name="password" required>
+            <p class="comment">8-64 charactes</p>
+            <label for="confirm">Confirm new password:</label>
+            <br><input type="password" id="confirm" name="confirms" required>
+            <br><br><button type="submit" onclick="reset_password()">Submit</button>
+        </div>
+        <br><span class="error">&nbsp;</span><br>
+    </div>
+    <br>
+
+    <script src="scripts/functions.js"></script>
+    <script src="scripts/login.js"></script>
+</body>
+</html>
