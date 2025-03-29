@@ -15,7 +15,7 @@ class guiset():
                 close = 1
             else:
                 close = 0
-            self.win = cw.window(self,"Chat settings","720x540",(480,360),close_all=close)
+            self.win = cw.window(self,cg.app_name+" settings","720x540",(480,360),close_all=close)
             self.win.on_exit(self.gui_close)
 
             self.master = master
@@ -150,7 +150,7 @@ class guiset():
         frame = self.frame_about
         cw.label(self,frame,text="About:",padx=16)
         cw.label(self,frame)
-        cw.label(self,frame,text="Chat")
+        cw.label(self,frame,text=cg.app_name)
         cw.label(self,frame,text="Made by Eerik Abel")
         cw.label(self,frame,text="Desktop edition")
         cw.label(self,frame,text="Built on Python, Tkinter")
@@ -236,7 +236,7 @@ class guiset():
             self.frame_theme.pack()
             self.frame_account.pack_forget()
             self.frame_about.pack_forget()
-        self.win.title("Chat settings - " + page)
+        self.win.title(cg.app_name + " settings - " + page)
 
     def submit(self):
         self.error_account.set("No changes made")

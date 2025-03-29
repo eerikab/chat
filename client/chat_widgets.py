@@ -35,7 +35,7 @@ root.withdraw() #Disable the main window
 cw_theme = setting.theming() #Init theming
 
 class window():
-    def __init__(self,window,title="Chat",size="640x480",minsize=(0,0),bg = "bg",close_all=True):
+    def __init__(self,window,title="TickChat",size="640x480",minsize=(0,0),bg = "bg",close_all=True):
         #Create Tk window
         self.window = window
         self.widget = tk.Toplevel(root)

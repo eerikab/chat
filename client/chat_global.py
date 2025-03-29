@@ -10,7 +10,8 @@ if release:
     HOST, PORT = "wss://chat-4zh4.onrender.com", "" #Server IP for released application
 
 #Versioning
-version = "0.1.2" #App version, increase with each released update
+app_name = "TickChat"
+version = "0.1.3" #App version, increase with each released update
 server_version = ""
 
 #User

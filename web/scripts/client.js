@@ -123,18 +123,16 @@ class contact_btn {
                 }
                 else
                 {
-                    request_user("get",id+"\n"+num.toString(),function(result)
+                    request_user("get",id+"\n"+num.toString()+"\n"+num.toString(),function(result)
                     {
-                        var data = result.split("\n");
-                        var msg = "";
+                        var data = JSON.parse(result);
 
-                        for (var i = 2; i < data.length; i++)
-                        {
-                            msg += data[i] + "\n";
-                        }
+                        var user = data[0][1];
+                        var date = data[0][2];
+                        var msg = data[0][3];
 
-                        msgs[id][String(num)] = [data[0],data[1], msg];
-                        writemsg(btn,id,time_format(data[1]),"\n"+data[2]);
+                        msgs[id][String(num)] = [user,date, msg];
+                        writemsg(btn,id,time_format(date),"\n"+msg);
                         userbox.appendChild(btn);
                         save_msgs();
                     });
@@ -674,7 +672,7 @@ function logout()
 
 function set_title(text)
 {
-    document.title = "Chat - " + text;
+    document.title = "TickChat - " + text;
     title_label.textContent = text;
 }
 

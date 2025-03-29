@@ -24,7 +24,7 @@ class client():
         self.master = master
         self.success = 0
 
-        self.win = cw.window(self,"Chat login",size="560x420",minsize=(320,240))
+        self.win = cw.window(self,cg.app_name+" login",size="560x420",minsize=(320,240))
 
         self.page = cw.stringvar("Login")
 
@@ -82,7 +82,7 @@ class client():
             self.register.frame.pack_forget()
             self.recover.frame.pack_forget()
             self.login.error.set("")
-        self.win.title("Chat login - " + page)
+        self.win.title(cg.app_name + " login - " + page)
 
     def autosubmit(self):
         self.pass_hash = cg.password
@@ -236,7 +236,7 @@ class login():
         self.frame.pack_forget()
 
         #Widgets
-        cw.label(self.master,self.frame,text="Welcome!",pady=8)
+        cw.label(self.master,self.frame,text="Welcome to "+cg.app_name+"!",pady=8)
         cw.label(self.master,self.frame,text="Username:")
         self.entry_name = cw.entry(self.master,self.frame)
         self.entry_name.insert(cg.user)
@@ -260,7 +260,7 @@ class register():
         self.frame.pack_forget()
         
         #Widgets
-        cw.label(self.master,self.frame,text="Welcome!",pady=8)
+        cw.label(self.master,self.frame,text="Welcome to "+cg.app_name+"!",pady=8)
         cw.label(self.master,self.frame,text="Username:")
         self.entry_name = cw.entry(self.master,self.frame)
         cw.comment(self.master,self.frame,text="4-32 characters; letters, numbers, \nunderscores, dashes, periods allowed")

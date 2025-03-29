@@ -9,7 +9,7 @@ class client():
     def __init__(self,master) -> None:
 
         #Initialise window
-        self.win = cw.window(self,"Chat","800x600",(640,480))
+        self.win = cw.window(self,cg.app_name,"800x600",(640,480))
         self.master = master
 
         self.page = cw.stringvar("Messages")
@@ -27,7 +27,7 @@ class client():
 
         self.page_frame = cw.frame(self,self.right,expand=1,fill="both")
 
-        self.title = cw.label(self,self.left, text="Chat",pady=8,bold=True,fg="selected")
+        self.title = cw.label(self,self.left, text=cg.app_name,pady=8,bold=True,fg="selected")
         cw.label(self,self.left,pady=4)
         cw.radio(self,self.left, 
                 text="Posts", 
@@ -202,7 +202,7 @@ class client():
 
     def set_title(self, txt):
         self.page_title.set(txt)
-        self.win.title("Chat - " +txt)
+        self.win.title(cg.app_name+" - " +txt)
 
 
 class postbtn():
