@@ -11,7 +11,7 @@ if release:
 
 #Versioning
 app_name = "TickChat"
-version = "0.1.3" #App version, increase with each released update
+version = "0.1.4" #App version, increase with each released update
 server_version = ""
 
 #User

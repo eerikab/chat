@@ -176,23 +176,27 @@ def regex_user(user):
     else:
         return False
     
-def load_line(lines, line, default=""):
+def load_line(line, default=""):
+    #Set variable value from save file via line number
+    #Set to default when empty
     try:
-        var = lines[line].strip()
+        with open(cg.file_settings,"r") as file:
+            lines = file.readlines()
+
+            var = lines[line].strip()
+            if var == "":
+                var = default
     except:
         var = default
 
     return var
     
 def load_user():
-    with open(cg.file_settings,"r") as file:
-        lines = file.readlines()
-        
-        cg.user = load_line(lines, 0)
-        cg.password = load_line(lines, 1)
-        cg.theme = load_line(lines, 2)
-        cg.accent = load_line(lines, 3)
-        cg.apply_theme = int(load_line(lines, 4, 1))
+    cg.user = load_line(0)
+    cg.password = load_line(1)
+    cg.theme = load_line(2, "Dark")
+    cg.accent = load_line(3, "Blue")
+    cg.apply_theme = int(load_line(4, 1))
 
 def save_user():
     with open(cg.file_settings,"w") as file:
@@ -256,10 +260,15 @@ def update_user(resp):
 
 #Init
 
+#Create config directory
+os.makedirs(cg.directory+"/config", exist_ok=True) 
+
 #Create settings file if not available
 try:
-    with open(cg.file_theme,"r"):
-        pass
+    with open(cg.file_theme,"r") as file:
+        #If the file is empty, set themes
+        if not file.read():
+            reset()
 except:
     reset()
 

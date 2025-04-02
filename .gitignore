@@ -17,3 +17,8 @@ test.py
 #environment variables
 .env
 env.*
+
+#executable builds
+build
+dist
+*.spec

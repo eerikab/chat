@@ -1,3 +1,3 @@
 #!/bin/bash
-cd web
+cd ../web
 python3 -m http.server
