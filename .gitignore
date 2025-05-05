@@ -1,5 +1,5 @@
 #ignore text files
-*.txt
+chat_settings*
 
 #cache
 __pycache__
