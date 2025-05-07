@@ -4,7 +4,7 @@
 const release = 1;
 
 //App version, increase with each released update
-const version = "0.1.5a1";
+const version = "0.1.5";
 
 //Declare variable
 var username;
