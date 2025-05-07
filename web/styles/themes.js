@@ -1,4 +1,5 @@
-{
+/// JSON-like object for theming
+var themes_data = {
     "Themes": [
         {
             "name": "Dark",

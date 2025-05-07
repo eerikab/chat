@@ -9,18 +9,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="styles/themes.js"></script>
     <script src="scripts/theming.js"></script>
     
     <title>TickChat settings - About</title>
 </head>
 <body>
     <aside>
-        <button onclick="location.href='appearance.html';" class="btn_inactive">Appearance</button>
+        <br><br><br><button onclick="location.href='appearance.html';" class="btn_inactive">Appearance</button>
         <button onclick="location.href='account.html';" id="btn_account" class="btn_inactive">Account</button>
         <button onclick="location.href='about.html';" class="btn_active">About</button>
         <div class="list_bottom">
             <button onclick="go_back();">Back</button><br><br>
         </div>
+    </aside>
+
+    <aside class="menu_toggle">
+        <button class="btn_menu" onclick="toggle_sidebar();">Menu</button>
     </aside>
 
     <div class="main">

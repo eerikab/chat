@@ -1,10 +1,10 @@
 ///Functions shared between pages
 
 //Enable "release" to use production IP, otherwise use localhost
-const release = 1
+const release = 1;
 
 //App version, increase with each released update
-const version = "0.1.4"
+const version = "0.1.5";
 
 //Declare variable
 var username;
@@ -14,6 +14,8 @@ var userid;
 var room;
 var friend;
 var sessionid;
+
+let sidebar = 1;
 
 //Networking
 let HOST = "ws://localhost"; //Local address for testing
@@ -28,8 +30,23 @@ if (release)
 let server_version = sessionStorage.getItem("version");
 
 let error = document.querySelector(".error");
+const asides = document.getElementsByTagName("aside");
 
-let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+const div_main = document.querySelector(".main");
+const chatbox_short = document.querySelector(".chatbox_short");
+const chatbox = document.querySelector(".chatbox");
+const postbox = document.querySelector(".postbox");
+const userlist = document.querySelector(".contactlist");
+const userbox = document.querySelector(".userlist_box");
+const topbar = document.querySelector(".topbar");
+const send = document.querySelector(".send");
+const send_short = document.querySelector(".send_short");
+const adduser = document.querySelector(".adduser");
+const menu_toggle = document.querySelector(".menu_toggle");
+const menu_toggle_long = document.querySelector(".menu_toggle_long");
+const title_label = document.getElementById("page_title");
+
+let months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function get_userdata()
 {
@@ -50,9 +67,9 @@ function get_userdata()
 
 function request_raw(text,func)
 {
-    error_reset()
+    error_reset();
     console.log("request",text);
-    console.log(HOST + ":" + PORT)
+    console.log(HOST + ":" + PORT);
     const socket = new WebSocket(HOST + ":" + PORT);
 
     //Request data from server
@@ -193,4 +210,89 @@ function update_user(resp)
     location.reload();
 }
 
+function toggle_sidebar()
+{
+    sidebar = !sidebar;
+    for (let i = 0; i < asides.length; i++) {
+        if (sidebar) 
+        {
+            asides[i].style.display = "block";
+            
+            //if (menu_toggle) menu_toggle.style.marginLeft = "16ch";
+            //if (menu_toggle_long) menu_toggle_long.style.marginLeft = "20ch";
+            if (div_main) div_main.style.marginLeft = "16ch";
+            if (chatbox) chatbox.style.paddingLeft = "20ch";
+            if (postbox) postbox.style.paddingLeft = "20ch";
+            if (chatbox_short) chatbox_short.style.paddingLeft = "36ch";
+            //if (userlist) userlist.style.marginLeft = "20ch";
+            if (userbox) userbox.style.paddingLeft = "36ch";
+            if (topbar) { 
+                topbar.style.marginLeft = "20ch";
+                topbar.style.paddingLeft = "2ch";
+            }
+            if (send) { 
+                send.style.marginLeft = "20ch";
+                send.style.width = "calc(100% - 20ch)";
+            }
+            if (send_short) { 
+                send_short.style.marginLeft = "36ch";
+                send_short.style.width = "calc(100% - 36ch)";
+            }
+            if (adduser) { 
+                adduser.style.marginLeft = "36ch";
+                adduser.style.width = "calc(100% - 36ch)";
+            }
+        }
+        else 
+        {
+            asides[i].style.display = "none";
+
+            if (menu_toggle) {
+                menu_toggle.style.display = "block";
+                menu_toggle.style.marginLeft = "0";
+            }
+            if (menu_toggle_long) {
+                menu_toggle_long.style.display = "block";
+                menu_toggle_long.style.marginLeft = "0";
+            }
+            if (div_main) div_main.style.marginLeft = "0";
+            if (chatbox) chatbox.style.paddingLeft = "0";
+            if (postbox) postbox.style.paddingLeft = "0";
+            if (chatbox_short) chatbox_short.style.paddingLeft = "0";
+            //if (userlist) userlist.style.marginLeft = "0";
+            if (userbox) userbox.style.paddingLeft = "0";
+            if (topbar) {
+                topbar.style.marginLeft = "0";
+                topbar.style.paddingLeft = "8ch";
+            }
+            if (send) { 
+                send.style.marginLeft = "0";
+                send.style.width = "100%";
+            }
+            if (send_short) { 
+                send_short.style.marginLeft = "0";
+                send_short.style.width = "100%";
+            }
+            if (adduser) { 
+                adduser.style.marginLeft = "0";
+                adduser.style.width = "100%";
+            }
+        }
+    }
+}
+
+function check_width()
+{
+    if (innerWidth > 640) {
+        if (!sidebar) toggle_sidebar();
+    }
+    else {
+        if (sidebar) toggle_sidebar();
+    }
+}
+
+window.addEventListener("resize", check_width);
+
+
 get_userdata();
+check_width();

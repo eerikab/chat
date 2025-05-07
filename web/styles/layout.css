@@ -4,8 +4,6 @@ html, body {
     width: 100%;
     height: 100%;
     word-wrap: break-word;
-    min-width: 800px;
-    min-height: 600px;
 }
 
 body, button, textarea, input {
@@ -185,4 +183,25 @@ textarea {
     position: absolute;
     bottom: 0;
     width: 100%;
+}
+
+.menu_toggle {
+    margin-left: 0;
+    height: 3ch;
+    width: 6ch;
+}
+
+.menu_toggle_long {
+    margin-left: 0;
+    margin-top: 1ch;
+    height: 3ch;
+    width: 6ch;
+}
+
+.btn_menu {
+    width: 6ch;
+}
+
+.main_title {
+    padding-left: 2ch;
 }

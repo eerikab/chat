@@ -1,8 +1,5 @@
 //For theme settings under Appearance
 
-const themes = ["","Dark","Light","Dark Blue"];
-const accents = ["","Blue","Green","Orange","Red","Purple"];
-
 const div_theme = document.getElementById("theme");
 const div_accent = document.getElementById("accent");
 const check_apply = document.getElementById("apply");
@@ -22,7 +19,6 @@ check_apply.checked = false;
 date_comment.textContent = time_format(Date(), false);
 
 class toggle {
-
     constructor(num, mode)
     {
         this.num = num;
@@ -36,12 +32,12 @@ class toggle {
 
         if (this.mode === "theme")
         {
-            this.button.appendChild(document.createTextNode(themes[this.num]));
+            this.button.appendChild(document.createTextNode(themes_data["Themes"][num]["name"]));
             div_theme.appendChild(this.button);
         }
         if (this.mode === "accent")
         {
-            this.button.appendChild(document.createTextNode(accents[this.num]));
+            this.button.appendChild(document.createTextNode(themes_data["Accents"][num]["name"]));
             div_accent.appendChild(this.button);
         }
         this.button.addEventListener("click",(event) => {
@@ -59,19 +55,22 @@ class toggle {
 
 }
 
-let i = 1;
-let button;
-while (i < themes.length)
+function create_theme_toggles()
 {
-    new toggle(i,"theme");
-    i += 1;
-}
+    var i = 0;
+    let button;
+    while (i < themes_data["Themes"].length)
+    {
+        new toggle(i,"theme");
+        i += 1;
+    }
 
-i = 1;
-while (i < accents.length)
-{
-    new toggle(i,"accent");
-    i += 1;
+    i = 0;
+    while (i < themes_data["Accents"].length)
+    {
+        new toggle(i,"accent");
+        i += 1;
+    }
 }
 
 function switch_apply()
@@ -82,3 +81,4 @@ function switch_apply()
 }
 
 check_apply.addEventListener("click",switch_apply)
+create_theme_toggles();
