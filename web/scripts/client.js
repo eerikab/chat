@@ -1,11 +1,5 @@
 ///Functions for chatting room
 
-const chatbox_short = document.querySelector(".chatbox_short");
-const chatbox = document.querySelector(".chatbox");
-const postbox = document.querySelector(".postbox");
-const userlist = document.querySelector(".contactlist");
-const userbox = document.querySelector(".userlist_box");
-const title_label = document.getElementById("page_title");
 let temp_max = -1;
 let temp_min = -1;
 let num = 0;
