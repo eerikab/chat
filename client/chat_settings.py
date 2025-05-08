@@ -9,7 +9,7 @@ import chat_global as cg
 import datetime
 import json
 import asyncio
-from websockets.client import connect
+from websockets.legacy.client import connect
 import webbrowser
 import sys
 import threading
@@ -17,7 +17,7 @@ import threading
 def reset():
     #Reset all themes
     with open(cg.file_theme,"w") as settings:
-        config = configparser.ConfigParser()
+        config = dict()
 
         config["Theme 1"] = {
             "name" : "Dark",
@@ -92,16 +92,14 @@ def reset():
         config.write(settings)
 
 def theming():
-    config = configparser.ConfigParser()
-    config.read(cg.file_theme)
     sect = cg.theme
-    themels = themelist[0]
-    for i in themelist:
+    themels = themes_data["Themes"][0]
+    for i in themes_data["Themes"]:
         if i["name"] == sect:
             themels = i
     sect = cg.accent
-    accentls = accentlist[0]
-    for i in accentlist:
+    accentls = themes_data["Accents"]
+    for i in themes_data["Accents"]:
         if i["name"] == sect:
             accentls = i
     return {**themels,**accentls} 
@@ -227,18 +225,6 @@ def time_format(time_str=""):
         return day+" "+cg.months[int(month)]+" "+year+" "+hour+":"+minute
     except:
         return day+"/"+month+"/"+year+" "+hour+":"+minute
-    
-def ini_to_json():
-    #Converts theming configuration from INI to JSON
-    config = configparser.ConfigParser()
-    config.read(cg.directory+"/config/chat_themes.ini")
-    config_dict = dict()
-    for i in config.sections():
-        config_dict[i] = dict(config.items(i))
-    print(config_dict)
-    config_json = json.dumps(config_dict,indent=4)
-    with open(cg.directory+"/config/chat_themes.json","w") as file:
-        file.write(config_json)
 
 def json_decode(string):
     return json.loads(string)
@@ -274,56 +260,10 @@ except:
 
 #reset()
 
-#Open config file for reading
-config = configparser.ConfigParser()
-config.read(cg.file_theme)
-
-#Get theme settings
-themelist = []
-i = 1
-while True:
-    sect = "Theme "+str(i)
-    if config.has_section(sect):
-        theme_values = {
-            "name" : config.get(sect,"name"),
-            "bg" : config.get(sect,"background"),
-            "textbox" : config.get(sect,"textbox"),
-            "msg" : config.get(sect,"messagebox"),
-            "side" : config.get(sect,"sidebar"),
-            "text" : config.get(sect,"text"),
-            "high" : config.get(sect,"highlight"),
-            "comment" : config.get(sect,"comment")
-        }
-        themelist.append(theme_values)
-        i+=1
-    else:
-        break
-
-accentlist = []
-i = 1
-while True:
-    sect = "Accent "+str(i)
-    if config.has_section(sect):
-        accent = {
-            "name" : config.get(sect,"name"),
-            "button" : config.get(sect,"button"),
-            "user" : config.get(sect,"user"),
-            "button_high" : config.get(sect,"button_highlight"),
-            "selected" : config.get(sect,"selected_option"),
-            "error" : config.get(sect,"error"),
-        }
-        accentlist.append(accent)
-        i+=1
-    else:
-        break
-
-theme_names = []
-for i in themelist:
-        theme_names.append(i["name"])
-
-accent_names = []
-for i in accentlist:
-        accent_names.append(i["name"])
+#Load theming config
+with open(cg.file_theme) as file:
+    config = file.read()
+    themes_data = json.loads(config)
 
 load_user()
 

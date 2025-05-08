@@ -15,19 +15,28 @@ class client():
         self.page = cw.stringvar("Messages")
         self.friend = cw.stringvar("main")
 
+        self.sidebar = 1
+
         #Create widgets
-        self.left = cw.frame(self,self.win,side="left",fill="y",bg="side")
         self.right = cw.frame(self,self.win,side="right",fill="both",expand=1)
+        self.left = cw.frame(self,self.win,side="left",fill="y",bg="sidebar")
 
         self.titlebar = cw.frame(self,self.right,fill="x")
 
-        self.page_title = cw.label(self,self.titlebar,text="Page",side="left",padx=8,fg="selected",bold=True,pady=8)
+        self.button_menu_frame = cw.frame(self,self.titlebar,side="left",width=1)
+        self.button_menu_right = cw.button(self,self.button_menu_frame,text="Menu",command=self.toggle_sidebar,pady=4)
+        self.button_menu_right.widget.pack_forget()
+        
+        self.page_title = cw.label(self,self.titlebar,text="Page",side="left",padx=8,fg="selected_option",bold=True,pady=8)
         #self.search = cw.entry(self,self.titlebar,side="right",pady=8,padx=8)
         #cw.label(self,self.titlebar,text="Search:",side="right")
 
         self.page_frame = cw.frame(self,self.right,expand=1,fill="both")
 
-        self.title = cw.label(self,self.left, text=cg.app_name,pady=8,bold=True,fg="selected")
+        self.title_frame = cw.frame(self,self.left,pady=4,fill="x",bg="sidebar")
+        self.title = cw.label(self,self.title_frame, text=cg.app_name,pady=4,bold=True,fg="selected_option",side="right",fill="x", expand=1)
+        self.button_menu_left = cw.button(self,self.title_frame,text="Menu",command=self.toggle_sidebar,pady=0,side="left")
+
         cw.label(self,self.left,pady=4)
         cw.radio(self,self.left, 
                 text="Posts", 
@@ -70,7 +79,7 @@ class client():
         self.page_post()
         self.contact_strip()
         self.page_add()
-    
+
     def page_message(self):
         self.msg_frame = cw.frame(self,self.page_frame,side="right")
         self.msg_frame.pack_forget()
@@ -101,7 +110,7 @@ class client():
                                  fill="x",
                                  padx=16,
                                  expand=1,
-                                 bg="msg"
+                                 bg="messagebox"
                                  )
         cw.button(self,self.frame,
                 text="Send message",
@@ -121,7 +130,7 @@ class client():
                                  fill="x",
                                  padx=16,
                                  expand=1,
-                                 bg="msg"
+                                 bg="messagebox"
                                  )
         cw.button(self,self.frame_post,
                 text="Create post",
@@ -203,6 +212,21 @@ class client():
     def set_title(self, txt):
         self.page_title.set(txt)
         self.win.title(cg.app_name+" - " +txt)
+
+    def toggle_sidebar(self):
+        self.sidebar = not self.sidebar
+        if self.sidebar:
+            self.left.pack(side="left",fill="y")
+            self.button_menu_right.widget.pack_forget()
+            self.button_menu_frame.widget["width"] = 1
+            if self.page.get() == "Messages":
+                self.contacts.pack(fill="y",side="left")
+            
+        else:
+            self.left.pack_forget()
+            self.contacts.pack_forget()
+            self.button_menu_right.widget.pack(pady=4)
+            self.button_menu_frame.widget["width"] = 0
 
 
 class postbtn():

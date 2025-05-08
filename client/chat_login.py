@@ -23,15 +23,18 @@ class client():
     def __init__(self,master):
         self.master = master
         self.success = 0
+        self.sidebar = 1
 
-        self.win = cw.window(self,cg.app_name+" login",size="560x420",minsize=(320,240))
+        self.win = cw.window(self,cg.app_name+" login",size="560x420",minsize=(360,280))
 
         self.page = cw.stringvar("Login")
 
         #Widgets
-        self.left = cw.frame(self,self.win,side="left",fill="y",bg="side")
         self.right = cw.frame(self,self.win,side="right",fill="both",expand=1)
+        self.left = cw.frame(self,self.win,side="left",fill="y",bg="sidebar")
         
+        for i in range(3):
+            cw.label(self,self.left)
         self.button_login = cw.radio(self,self.left, 
                                         text="Login", 
                                         value="Login", 
@@ -50,12 +53,16 @@ class client():
                                         )
         
         self.button_settings = cw.button(self, self.left, text="Settings", command=self.guiset, 
-                                         side="bottom",pady=16, padx=16, width=8)
+                                         side="bottom",pady=16, width=8)
         #Pages
         self.login = login(self)
         self.register = register(self)
         self.recover = recover(self)
         self.switch()
+
+        self.button_menu = cw.button(self,self.win,text="Menu",command=self.toggle_sidebar)
+        self.button_menu.widget.pack_forget()
+        self.button_menu.widget.place(x=0,y=0)
 
         ch, resp = settings.request("version")
         if ch:
@@ -225,6 +232,13 @@ class client():
             self.client(resp)
         else:
             self.recover.error_recover.set(resp)
+
+    def toggle_sidebar(self):
+        self.sidebar = not self.sidebar
+        if self.sidebar:
+            self.left.pack(side="left",fill="y")
+        else:
+            self.left.pack_forget()
     
 
 class login():

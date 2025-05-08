@@ -35,7 +35,7 @@ root.withdraw() #Disable the main window
 cw_theme = setting.theming() #Init theming
 
 class window():
-    def __init__(self,window,title="TickChat",size="640x480",minsize=(0,0),bg = "bg",close_all=True):
+    def __init__(self,window,title="TickChat",size="640x480",minsize=(0,0),bg = "background",close_all=True):
         #Create Tk window
         self.window = window
         self.widget = tk.Toplevel(root)
@@ -76,9 +76,9 @@ def stringvar(var=""):
 
 #Base widgets
 class frame():
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",bg = "bg"):
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",bg = "background",width=0,height=0):
         self.window = window
-        self.widget = tk.Frame(master.widget)
+        self.widget = tk.Frame(master.widget,width=width,height=height)
         self.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
         ls_frame.append(self)
         self.color = {"bg":bg}
@@ -99,7 +99,7 @@ class frame():
         self.widget.destroy()
 
 class label():
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",width=0,bg = "bg",fg = "text",bold=False):
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",width=0,bg = "background",fg = "text",bold=False):
         self.window = window
         self.master = master
         if bold:
@@ -126,7 +126,7 @@ class label():
 
 class entry():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",width=30,show="",highlightthickness=0,
-                 bg = "msg",fg = "text",insertbackground = "text",selectforeground = "text",selectbackground = "button_high"):
+                 bg = "messagebox",fg = "text",insertbackground = "text",selectforeground = "text",selectbackground = "button_highlight"):
         self.window = window
         self.widget = tk.Entry(master.widget,width=width,show=show,highlightthickness=highlightthickness,font=font)
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
@@ -159,7 +159,7 @@ class entry():
 
 class text():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",width=20,height=3,highlightthickness=0,borderwidth=1, wrap=tk.WORD,
-                 bg = "textbox",fg = "text",selectbackground = "button_high",selectforeground = "text",insertbackground = "text",user="user",date="comment",
+                 bg = "textbox",fg = "text",selectbackground = "button_highlight",selectforeground = "text",insertbackground = "text",user="user",date="comment",
                  padix = 0, padiy = 0):
         self.window = window
         self.widget = tk.Text(master.widget,width=width,height=height,highlightthickness=highlightthickness,font=font,borderwidth=borderwidth, wrap=wrap,
@@ -216,7 +216,7 @@ class text():
 class button():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",
                  highlightthickness=0,command=0,width=0,justify="center",wraplength=0,anchor="center",
-                 bg = "button",fg = "text",activebackground = "button_high",activeforeground = "text", i = 0,
+                 bg = "button",fg = "text",activebackground = "button_highlight",activeforeground = "text", i = 0,
                  padix = 8, padiy = 4, borderwidth = 1, font = font):
         self.window = window
         self.widget = tk.Button(master.widget,text=text,command=command,width=width,
@@ -242,8 +242,8 @@ class button():
 
 class radio():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",value="",variable=0,indicatoron=0,command=setting.default,
-            borderwidth=0,padix=0,padiy=0,width=0,highlightthickness=0,bg = "msg",fg = "text",
-            activebackground = "high",activeforeground = "text",selectcolor = "selected"):
+            borderwidth=0,padix=0,padiy=0,width=0,highlightthickness=0,bg = "messagebox",fg = "text",
+            activebackground = "highlight",activeforeground = "text",selectcolor = "selected_option"):
         self.window = window
         self.widget = tk.Radiobutton(master.widget,text=text,value=value,variable=variable,indicatoron=indicatoron,borderwidth=borderwidth,
                                 padx=padix,pady=padiy,width=width,highlightthickness=highlightthickness,command=command,font=font)
@@ -262,7 +262,7 @@ class radio():
     
 class scroll():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",command=setting.default,highlightthickness=0,
-                 borderwidth=0,bg="side",troughcolor="textbox",activebackground="high"):
+                 borderwidth=0,bg="sidebar",troughcolor="textbox",activebackground="highlight"):
         self.window = window
         self.widget = tk.Scrollbar(master.widget,command=command,highlightthickness=highlightthickness,borderwidth=borderwidth)
         self.widget.pack(padx=padx, pady=pady, side=side, expand=expand, fill=fill)
@@ -278,7 +278,7 @@ class scroll():
         
 class check():
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",highlightthickness=0,command=setting.default,
-                 bg = "bg",fg = "text",activebackground = "high",activeforeground = "text",selectcolor = "msg",activecolor = "button",value=0):
+                 bg = "background",fg = "text",activebackground = "highlight",activeforeground = "text",selectcolor = "messagebox",activecolor = "button",value=0):
         self.variable = tk.IntVar(root, value=value)
         self.window = window
         self.widget = tk.Checkbutton(master.widget,text=text,variable=self.variable,highlightthickness=highlightthickness,command=command,font=font)
@@ -318,14 +318,14 @@ class canvas():
 
 #Modified versions of base widgets
 class comment(label):
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "bg",fg = "comment"):
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "background",fg = "comment"):
         self.window = window
         self.master = master
         self.widget = label(window,master,text=text, bg=bg, fg=fg, padx=padx, pady=pady, side=side, expand=expand, fill=fill).widget
         self.color = {"bg":bg, "fg":fg}
 
 class error(label):
-    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "bg",fg = "error"):
+    def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",bg = "background",fg = "error"):
         self.window = window
         self.master = master
         self.widget = label(window,master,text=text, bg=bg, fg=fg, padx=padx, pady=pady, side=side, expand=expand, fill=fill).widget
@@ -367,7 +367,7 @@ class canvas_window():
 class label_button(button):
     def __init__(self,window,master,padx=0,pady=0,side="top",expand=0,fill="none",text="",
                  highlightthickness=0,width=0,justify="center",wraplength=0,anchor="center",
-                 bg = "bg",fg = "button",activebackground = "bg",activeforeground = "button_high", i = 0,
+                 bg = "background",fg = "button",activebackground = "background",activeforeground = "button_highlight", i = 0,
                  padix = 0, padiy = 0, borderwidth = 0, url = "", command=setting.default):
         self.window = window
         self.url = url
@@ -390,8 +390,8 @@ class label_button(button):
 
 class text_button(text):
     def __init__(self,window,master,padx=8,pady=8,side="top",expand=0,fill="x",width=20,height=3,highlightthickness=0,borderwidth=0, wrap="none",
-                 bg = "bg",fg = "text",selectbackground = "button_high",selectforeground = "text",insertbackground = "text",user="user",date="comment",
-                 text_user = "", text_date = "", msg="", command=0, padix=6, padiy=6, activebackground="high"):
+                 bg = "background",fg = "text",selectbackground = "button_highlight",selectforeground = "text",insertbackground = "text",user="user",date="comment",
+                 text_user = "", text_date = "", msg="", command=0, padix=6, padiy=6, activebackground="highlight"):
         self.window = window
         self.child = text(window,master,width=width,height=height,highlightthickness=highlightthickness,borderwidth=borderwidth, wrap=wrap,
                            padx=padx, pady=pady, side=side, expand=expand, fill=fill, padix=padix, padiy=padiy,

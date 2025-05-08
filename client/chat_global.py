@@ -11,7 +11,7 @@ if release:
 
 #Versioning
 app_name = "TickChat"
-version = "0.1.4" #App version, increase with each released update
+version = "0.1.5" #App version, increase with each released update
 server_version = ""
 
 #User
@@ -26,7 +26,7 @@ session = "" #Session ID
 
 #File management
 directory = os.path.dirname(__file__)
-file_theme = directory+"/config/chat_themes.ini"
+file_theme = directory+"/config/chat_themes.json"
 file_settings = directory+"/config/chat_settings.txt"
 
 #Locale

@@ -37,31 +37,6 @@ class client():
         #settings.broadcast_function = self.broadcast
         settings.broadcast_start(self.broadcast)
 
-        '''#Load cache
-        os.makedirs(directory+"/cache",exist_ok=True)
-        try:
-            config = configparser.ConfigParser()
-            config.read(cachedir+"main.txt")
-
-            i = 0
-            while True:
-                sect = "msg"+str(i)
-                if config.has_section(sect):
-                    msg = dict(config.items(sect))
-                    self.msgs[str(i)] = msg
-                    i += 1
-                    print("Loaded cache",sect)
-
-                    user = msg["user"]
-                    if not user in self.users:
-                        self.users[user] = self.request("user",user)
-
-                else:
-                    break
-
-        except:
-            pass'''
-
     def request(self,cmd="",txt=""):
         msg = cmd + "\n" + cg.userid + "\n" + cg.password + "\n" + cg.session + "\n" + txt
         msg = msg.strip()

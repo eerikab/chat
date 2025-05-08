@@ -9,6 +9,7 @@ class guiset():
     def __init__(self,master="",window=""):
         if not cg.settings_open:
             cg.settings_open = 1
+            self.sidebar = 1
 
             #Create window
             if master == "":
@@ -20,17 +21,18 @@ class guiset():
 
             self.master = master
 
-            self.themelist = settings.themelist
-            self.accentlist = settings.accentlist
+            self.themelist = settings.themes_data
 
             self.theme_var = cw.stringvar(cg.theme)
             self.accent_var = cw.stringvar(cg.accent)
             self.page = cw.stringvar("Appearance")
 
             #Widgets
-            self.left = cw.frame(self,self.win,side="left",fill="y",bg="side")
             self.right = cw.frame(self,self.win,side="right",fill="both",expand=1)
+            self.left = cw.frame(self,self.win,side="left",fill="y",bg="sidebar")
 
+            for i in range(3):
+                cw.label(self,self.left)
             self.button_theme = cw.radio(self,self.left, 
                                             text="Appearance", 
                                             value="Appearance", 
@@ -65,6 +67,10 @@ class guiset():
                         side="bottom",
                         pady=16,
                         padx=8)
+            
+            self.button_menu = cw.button(self,self.win,text="Menu",command=self.toggle_sidebar)
+            self.button_menu.widget.pack_forget()
+            self.button_menu.widget.place(x=0,y=0)
 
             self.page_theme()
             self.page_account()
@@ -85,7 +91,7 @@ class guiset():
         frame = self.frame_theme
 
         cw.label(self,frame,text="Theme:")
-        for i in self.themelist:
+        for i in self.themelist["Themes"]:
             name = i["name"]
             cw.radio(self,frame, 
                     text=name, 
@@ -97,7 +103,7 @@ class guiset():
                     )
 
         cw.label(self,frame,text="Accent Color:")
-        for i in self.accentlist:
+        for i in self.themelist["Accents"]:
             name = i["name"]
             cw.radio(self,frame, 
                     text=name, 
@@ -110,7 +116,7 @@ class guiset():
 
         self.check_apply = cw.check(self,frame,text="Apply theming",command=self.local_theming,pady=8,value=cg.apply_theme)
 
-        self.field = cw.text(self,frame,width=50,height=3,padx=16,borderwidth=0)
+        self.field = cw.text(self,frame,width=36,height=3,borderwidth=0)
         self.field.insert_msg("User",settings.time_format(), "Sample message")
 
         self.field.disable()
@@ -336,6 +342,13 @@ class guiset():
         cg.remember = self.check_remember.get()
         settings.save_user()
         cw.theming()
+
+    def toggle_sidebar(self):
+        self.sidebar = not self.sidebar
+        if self.sidebar:
+            self.left.pack(side="left",fill="y")
+        else:
+            self.left.pack_forget()
 
 if __name__ == "__main__":
     guiset()
