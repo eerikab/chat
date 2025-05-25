@@ -91,6 +91,14 @@ class client():
             self.login.error.set("")
         self.win.title(cg.app_name + " login - " + page)
 
+    def page_login(self):
+        self.page.set("Login")
+        self.switch()
+
+    def page_register(self):
+        self.page.set("Register")
+        self.switch()
+
     def autosubmit(self):
         self.pass_hash = cg.password
         ch, resp = settings.request("login\n"+cg.user+"\n"+self.pass_hash)
@@ -263,7 +271,8 @@ class login():
         self.send = cw.button(self.master,self.frame, text="Log in", command=master.submit, pady=8)
 
         cw.label_button(self.master, self.frame, text="Recover password", command=master.start_recover)
-        cw.label_button(self.master, self.frame, text="Web version", url="https://eerikab.github.io/chat/")
+        cw.label_button(self.master, self.frame, text="Create an account", command=master.page_register)
+        cw.label_button(self.master, self.frame, text="Web version", url="https://eerikab.github.io/chat/", pady=8)
 
 class register():
     def __init__(self,master=client) -> None:
@@ -291,6 +300,8 @@ class register():
 
         self.error = cw.error(self.master,self.frame)
         self.send = cw.button(self.master,self.frame, text="Sign up", command=master.signup,pady=8)
+        cw.label_button(self.master, self.frame, text="Log in to an existing account", command=master.page_login)
+        cw.label_button(self.master, self.frame, text="Privacy", url="https://eerikab.github.io/chat/privacy.html")
 
 class recover():
     def __init__(self, master=client):

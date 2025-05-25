@@ -166,6 +166,7 @@ class guiset():
         cw.label(self,frame)
         cw.label_button(self,frame,text="Web version",url="https://eerikab.github.io/chat/")
         cw.label_button(self,frame,text="GitHub home page",url="https://github.com/eerikab/chat")
+        cw.label_button(self,frame,text="Privacy",url="https://eerikab.github.io/chat/privacy.html")
 
     def account_widgets(self):
         frame = self.frame_change
