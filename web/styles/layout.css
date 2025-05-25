@@ -205,3 +205,9 @@ textarea {
 .main_title {
     padding-left: 2ch;
 }
+
+.privacy {
+    padding-left: 2ch;
+    padding-right: 2ch;
+    text-align: left;
+}

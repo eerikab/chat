@@ -4,7 +4,7 @@
 const release = 1;
 
 //App version, increase with each released update
-const version = "0.1.5";
+const version = "0.1.6";
 
 //Declare variable
 var username;
@@ -161,7 +161,10 @@ function error_reset()
 
 function go_back()
 {
+    if (sessionStorage.getItem("prevpage"))
     location.href = sessionStorage.getItem("prevpage");
+    else
+    location.href = "index.html";
 }
 
 function time_format(time, utc=true)
