@@ -21,9 +21,10 @@ import http
 import signal
 import smtplib
 from email.message import EmailMessage
+import pathlib
 
 '''Version'''
-version = "0.1.2" #Version of server program, increase it with each update
+version = "0.1.9d1" #Version of server program, increase it with each update
 py_version = sys.version.split()[0]
 print("Server program version", version)
 print("Python version", sys.version)
@@ -82,8 +83,9 @@ ping_interval = 12 * 60 #Message itself every 12 minutes to prevent standby
 recovery_time = 20
 
 #Read variables from "env.json" if exists
+directory = pathlib.Path(__file__).parent
 try:
-    with open(os.path.dirname(__file__) + "/env.json") as file:
+    with open(directory / "env.json") as file:
         data = json.loads(file.read())
         try: chat_database = data["CHAT_DATABASE"]
         except: pass
@@ -141,10 +143,10 @@ print("Server:", host_current, port_current)
 
 #Data directories
 #Deprecated by use of external postgres database
-dir_data = os.path.dirname(__file__)+"/data/"
+dir_data = directory / "data"
 #Why should the folder already existing cause an error by default?
-os.makedirs(dir_data, exist_ok=True) 
-dir_db = dir_data + "data.db"
+pathlib.Path.mkdir(dir_data, exist_ok=True) 
+dir_db = dir_data / "data.db"
 
 #Database connection
 class db_connection():

@@ -3,7 +3,7 @@
 import os
 
 #Connection
-release = 1 #Release/Debug flag, 0 is for localhost, 1 for public ip
+release = 0 #Release/Debug flag, 0 is for localhost, 1 for public ip
 HOST, PORT = "ws://localhost", 9000
 
 if release:
@@ -11,8 +11,11 @@ if release:
 
 #Versioning
 app_name = "TickChat"
-version = "0.1.6" #App version, increase with each released update
+version = "0.1.7" #App version, increase with each released update
 server_version = ""
+
+if not release:
+    version += " (testing)"
 
 #User
 user = "" #User name
@@ -25,9 +28,11 @@ remember = 1 #Remember username and password hash for next login
 session = "" #Session ID
 
 #File management
-directory = os.path.dirname(__file__)
-file_theme = directory+"/config/chat_themes.json"
-file_settings = directory+"/config/chat_settings.txt"
+directory = ""
+userdir = ""
+configdir = ""
+file_theme = "chat_themes.json"
+file_settings = "chat_settings.txt"
 
 #Locale
 months = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]

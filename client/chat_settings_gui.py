@@ -3,7 +3,6 @@
 import chat_settings as settings
 import chat_widgets as cw
 import chat_global as cg
-import sys
 
 class guiset():
     def __init__(self,master="",window=""):

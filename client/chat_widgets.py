@@ -2,9 +2,7 @@
 Unifies widgets used by all windows, though they can be individually modified'''
 
 import tkinter as tk
-from tkinter import ttk
 import chat_settings as setting
-import os
 import chat_global as cg
 
 #Font

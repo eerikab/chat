@@ -1,12 +1,9 @@
 '''Login window for client app'''
 
-import os
 import chat_settings as settings
 import chat_widgets as cw
 import chat_global as cg
 import chat_settings_gui as csg
-
-save = os.path.dirname(__file__)+"/chat_settings.txt"
 
 delay = 1000
 run = 1

@@ -1,8 +1,6 @@
 '''Common tools functions that can be used by all windows\n
 Set up data for themes and stufs\n'''
 
-import os
-import configparser
 from hashlib import sha256
 import re
 import chat_global as cg
@@ -13,6 +11,36 @@ from websockets.legacy.client import connect
 import webbrowser
 import sys
 import threading
+import pathlib
+
+def init_fs():
+    '''Initialize file management'''
+
+    #Create directories
+    cg.userdir = pathlib.Path("~/.local/share/tickchat").expanduser()
+    cg.configdir = pathlib.Path(__file__).parent / "config"
+
+    cg.file_theme = cg.configdir / cg.file_theme
+    cg.file_settings = cg.userdir / cg.file_settings
+
+    print(cg.userdir,cg.configdir,cg.file_theme,cg.file_settings)
+
+    pathlib.Path.mkdir(cg.userdir, exist_ok=True)
+    pathlib.Path.mkdir(cg.configdir, exist_ok=True)
+
+    #Create settings file if not available
+    if not load_themes():
+        reset()
+
+def load_themes():
+    #Load theming config
+    try:
+        with open(cg.file_theme,"r") as file:
+            config = file.read()
+            data = json.loads(config)
+            return data
+    except:
+        return False
 
 def reset():
     #Reset all themes
@@ -242,29 +270,10 @@ def update_user(resp):
         if ch:
             cg.session = resp.split("\n")[1]
 
-    
 
 #Init
-
-#Create config directory
-os.makedirs(cg.directory+"/config", exist_ok=True) 
-
-#Create settings file if not available
-try:
-    with open(cg.file_theme,"r") as file:
-        #If the file is empty, set themes
-        if not file.read():
-            reset()
-except:
-    reset()
-
-#reset()
-
-#Load theming config
-with open(cg.file_theme) as file:
-    config = file.read()
-    themes_data = json.loads(config)
-
+init_fs()
+themes_data = load_themes()
 load_user()
 
 themed = 0
